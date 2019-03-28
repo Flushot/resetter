@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
 
     if (resetter_start(&ctx, "tcp[tcpflags] & tcp-ack != 0 && ( port 80 or port 443 )") != 0) {
         fprintf(stderr, "failed to start resetter");
+        resetter_cleanup(&ctx);
+        return EXIT_FAILURE;
     }
 
     resetter_cleanup(&ctx);

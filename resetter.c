@@ -237,7 +237,6 @@ int resetter_init(resetter_context_t *ctx) {
 
 int resetter_start(resetter_context_t *ctx, char *filter_string) {
     if (set_pcap_filter(ctx, filter_string) != 0) {
-        resetter_cleanup(ctx);
         return -1;
     }
 
