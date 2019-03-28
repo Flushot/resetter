@@ -1,0 +1,7 @@
+*.log
+*.a
+*.so
+*.dSYM/
+*.iml
+.idea/
+/cmake-build-*/
