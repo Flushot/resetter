@@ -4,6 +4,7 @@
 #include "resetter.h"
 
 static int init_zeromq(resetter_context_t *ctx) {
+#ifdef USE_ZEROMQ
     ctx->zmq_ctx = zmq_ctx_new();
     if (ctx->zmq_ctx == NULL) {
         perror("zmq_ctx_new() failed");
@@ -20,6 +21,7 @@ static int init_zeromq(resetter_context_t *ctx) {
         perror("zmq_bind() failed");
         return -1;
     }
+#endif
 
     return 0;
 }
@@ -166,6 +168,7 @@ int send_reset_packet(
     // Passing ptag to reuse packet instead of clearing (which is less CPU efficient)
     // libnet_clear_packet(ctx.libnet);
 
+#ifdef USE_ZEROMQ
     // Publish zeromq message.
     if (ctx->zmq_pub != NULL) {
         char queue_message[500];
@@ -175,6 +178,7 @@ int send_reset_packet(
             perror("zmq_send() failed");
         }
     }
+#endif
 
     // Occasionally report packet sent/errors stats
     u_long curr_time = (u_long)time(0);
@@ -267,6 +271,7 @@ void resetter_cleanup(resetter_context_t *ctx) {
         ctx->libnet = NULL;
     }
 
+#ifdef USE_ZEROMQ
     if (ctx->zmq_pub != NULL) {
         zmq_close(ctx->zmq_pub);
         ctx->zmq_pub = NULL;
@@ -276,4 +281,5 @@ void resetter_cleanup(resetter_context_t *ctx) {
         zmq_ctx_destroy(ctx->zmq_ctx);
         ctx->zmq_ctx = NULL;
     }
+#endif
 }

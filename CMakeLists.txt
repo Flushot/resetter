@@ -7,6 +7,9 @@ set(resetter_VERSION_MINOR 0)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb")
 
+# resetter defines
+#add_definitions(-DUSE_ZEROMQ)
+
 add_executable(resetter main.c resetter.c)
 
 # libnet
