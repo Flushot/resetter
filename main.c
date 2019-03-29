@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
         filter_string = argv[1];
     } else {
         // All HTTP/SSL traffic
-        filter_string = "tcp[tcpflags] & tcp-ack != 0 && ( port 80 or port 443 )";
+        filter_string = "tcp";
     }
 
     if (resetter_start(&ctx, filter_string) != 0) {

@@ -78,14 +78,32 @@ static int init_pcap(resetter_context_t *ctx) {
     return 0;
 }
 
-static int set_pcap_filter(resetter_context_t *ctx, char *filter_string) {
-    struct bpf_program filter;
-
-    if (pcap_compile(ctx->pcap, &filter, filter_string, 0, PCAP_NETMASK_UNKNOWN) == PCAP_ERROR) {
-        pcap_perror(ctx->pcap, "pcap_compile() failed");
+static int set_pcap_filter(resetter_context_t *ctx, char *filter_suffix) {
+    // Always prepend with this condition to just include SYN-ACK packets
+    char *filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
+    char *filter_string = (char *)malloc(sizeof(char) * strlen(filter_prefix) + strlen(filter_suffix) + 1);
+    if (filter_string == NULL) {
+        perror("malloc() failed");
         return -1;
     }
 
+    filter_string[0] = 0;
+    strcat(filter_string, filter_prefix);
+    strcat(filter_string, filter_suffix);
+
+    printf("Filter: %s\n", filter_string);
+
+    // Compile BPF filter
+    struct bpf_program filter;
+    if (pcap_compile(ctx->pcap, &filter, filter_string, 0, PCAP_NETMASK_UNKNOWN) == PCAP_ERROR) {
+        pcap_perror(ctx->pcap, "pcap_compile() failed");
+        free(filter_string);
+        return -1;
+    }
+
+    free(filter_string);
+
+    // Use compiled filter
     if (pcap_setfilter(ctx->pcap, &filter) == PCAP_ERROR) {
         pcap_perror(ctx->pcap, "pcap_setfilter() failed");
         return -1;
