@@ -24,8 +24,11 @@ target_link_libraries(resetter net)
 find_library(pcap libpcap.a)
 target_link_libraries(resetter pcap)
 
-# libzmq
-find_library(zmqp libzmq.a)
-target_link_libraries(resetter zmq)
+get_directory_property(MYDEFS COMPILE_DEFINITIONS)
+if(MYDEFS MATCHES "USE_ZEROMQ")
+    # libzmq
+    find_library(zmqp libzmq.a)
+    target_link_libraries(resetter zmq)
+endif()
 
 install(TARGETS resetter DESTINATION bin)
