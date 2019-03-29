@@ -23,7 +23,7 @@ static int init_zeromq(resetter_context_t *ctx) {
     }
 
     char zmq_url[500];
-    snprintf(zmq_url, sizeof(zmq_url) / sizeof(char), "tcp://*:%d", ctx->zmq_port);
+    snprintf(zmq_url, sizeof(zmq_url) / sizeof(char) - 1, "tcp://*:%d", ctx->zmq_port);
 
     if (zmq_bind(ctx->zmq_pub, zmq_url) == -1) {
         perror("zmq_bind() failed");
@@ -130,8 +130,10 @@ int send_reset_packet(
     static libnet_ptag_t tcp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t ip_tag = LIBNET_PTAG_INITIALIZER;
 
-    const char *saddr_str = inet_ntoa(saddr.sin_addr);
-    const char *daddr_str = inet_ntoa(daddr.sin_addr);
+    // inet_ntoa stores results in a static buffer that gets overwritten with every call
+    char saddr_str[16], daddr_str[16];
+    strncpy(saddr_str, inet_ntoa(saddr.sin_addr), sizeof(saddr_str));
+    strncpy(daddr_str, inet_ntoa(daddr.sin_addr), sizeof(daddr_str));
 
     printf("Resetting TCP connection from %s:%d <-> %s:%d\n",
            saddr_str, sport,
@@ -200,7 +202,7 @@ int send_reset_packet(
     // Publish zeromq message.
     if (ctx->zmq_pub != NULL) {
         char queue_message[500];
-        snprintf(queue_message, (sizeof(queue_message) / sizeof(char)) - 1,
+        snprintf(queue_message, sizeof(queue_message) / sizeof(char) - 1,
                  "reset %s:%d %s:%d", saddr_str, sport, daddr_str, dport);
         if (zmq_send(ctx->zmq_pub, queue_message, strlen(queue_message), 0) == -1) {
             perror("zmq_send() failed");
@@ -240,8 +242,8 @@ static void on_packet_captured(u_char *user_args, const struct pcap_pkthdr *cap_
 
     // Get saddr/daddr from IPv4 header
     struct sockaddr_in saddr, daddr;
-    memset(&saddr, 0, sizeof(saddr));
-    memset(&daddr, 0, sizeof(daddr));
+    memset(&saddr, 0, sizeof(struct sockaddr_in));
+    memset(&daddr, 0, sizeof(struct sockaddr_in));
     saddr.sin_addr.s_addr = *((uint32_t *)&(ip_hdr->ip_src));
     daddr.sin_addr.s_addr = *((uint32_t *)&(ip_hdr->ip_dst));
 
