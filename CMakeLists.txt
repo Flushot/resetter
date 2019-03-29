@@ -4,31 +4,41 @@ project(resetter C)
 set(resetter_VERSION_MAJOR 1)
 set(resetter_VERSION_MINOR 0)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb")
+# Enable for debugging
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
-# resetter defines
 #add_definitions(-DUSE_ZEROMQ)
+add_executable(resetter main.c resetter.c asmtest.asm)
+install(TARGETS resetter DESTINATION bin)
 
-add_executable(resetter main.c resetter.c)
+# C compiler
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb -fPIC")
+
+# x86 compiler
+enable_language(ASM_NASM)
+if(CMAKE_ASM_NASM_COMPILER_LOADED)
+    set(CAN_USE_ASSEMBLER TRUE)
+    #set(CMAKE_ASM_NASM_FLAGS "#{CMAKE_ASM_NASM_FLAGS}")
+    file(GLOB_RECURSE ENGINE_ASM_FILES "*.asm")
+    set(ENGINE_SOURCES ${ENGINE_SOURCES} ${ENGINE_ASM_FILES})
+endif(CMAKE_ASM_NASM_COMPILER_LOADED)
 
 # libnet
-# libnet-config --defines
+# TODO: figure out how to run $(libnet-config --defines)
 set(net_HAVE_SOCKADDR_SA_LEN ON)
 set(net_LIBNET_BSDISH_OS ON)
 set(net_LIBNET_BSD_BYTE_SWAP ON)
 find_library(net libnet.a)
 target_link_libraries(resetter net)
 
-# libpcap
+# pcap
 find_library(pcap libpcap.a)
 target_link_libraries(resetter pcap)
 
 get_directory_property(MYDEFS COMPILE_DEFINITIONS)
 if(MYDEFS MATCHES "USE_ZEROMQ")
-    # libzmq
+    # zeromq
     find_library(zmqp libzmq.a)
     target_link_libraries(resetter zmq)
 endif()
-
-install(TARGETS resetter DESTINATION bin)

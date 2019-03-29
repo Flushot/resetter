@@ -56,7 +56,7 @@ static int init_libnet(resetter_context_t *ctx) {
 static int init_pcap(resetter_context_t *ctx) {
     const int snapshot_length = 2048;
     const int promiscuous = 1; // Promiscuous mode
-    const int timeout = 1;
+    const int timeout = 1; // Packet buffer timeout https://www.tcpdump.org/manpages/pcap.3pcap.html
 
     char errbuf[PCAP_ERRBUF_SIZE];
 
