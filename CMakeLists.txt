@@ -7,7 +7,7 @@ set(resetter_VERSION_MINOR 0)
 # Enable for debugging
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#add_definitions(-DUSE_ZEROMQ)
+add_definitions(-DUSE_ZEROMQ)
 add_executable(resetter main.c resetter.c asmtest.asm)
 install(TARGETS resetter DESTINATION bin)
 

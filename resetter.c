@@ -5,6 +5,11 @@
 
 static int init_zeromq(resetter_context_t *ctx) {
 #ifdef USE_ZEROMQ
+    if (ctx->zmq_port == 0) {
+        // Disable zmq: No port specified
+        return 0;
+    }
+
     ctx->zmq_ctx = zmq_ctx_new();
     if (ctx->zmq_ctx == NULL) {
         perror("zmq_ctx_new() failed");
@@ -17,10 +22,15 @@ static int init_zeromq(resetter_context_t *ctx) {
         return -1;
     }
 
-    if (zmq_bind(ctx->zmq_pub, "tcp://*:5555") == -1) {
+    char zmq_url[500];
+    snprintf(zmq_url, sizeof(zmq_url) / sizeof(char), "tcp://*:%d", ctx->zmq_port);
+
+    if (zmq_bind(ctx->zmq_pub, zmq_url) == -1) {
         perror("zmq_bind() failed");
         return -1;
     }
+
+    printf("ZeroMQ listening at: %s\n", zmq_url);
 #endif
 
     return 0;
@@ -190,7 +200,7 @@ int send_reset_packet(
     // Publish zeromq message.
     if (ctx->zmq_pub != NULL) {
         char queue_message[500];
-        snprintf(queue_message, (sizeof(queue_message) / sizeof(queue_message[0])) - 1,
+        snprintf(queue_message, (sizeof(queue_message) / sizeof(char)) - 1,
                  "reset %s:%d %s:%d", saddr_str, sport, daddr_str, dport);
         if (zmq_send(ctx->zmq_pub, queue_message, strlen(queue_message), 0) == -1) {
             perror("zmq_send() failed");
@@ -247,8 +257,6 @@ static void on_packet_captured(u_char *user_args, const struct pcap_pkthdr *cap_
 }
 
 int resetter_init(resetter_context_t *ctx) {
-    memset(ctx, 0, sizeof(resetter_context_t));
-
     if (init_zeromq(ctx) != 0 || init_libnet(ctx) != 0 || init_pcap(ctx) != 0) {
         resetter_cleanup(ctx);
         return -1;

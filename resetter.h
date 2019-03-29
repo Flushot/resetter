@@ -15,8 +15,9 @@ typedef struct _resetter_context_t {
     u_long libnet_last_stats_at; // last time libnet stats were reported
 
 #ifdef USE_ZEROMQ
-    void *zmq_ctx;  // zeromq context
-    void *zmq_pub;  // zeromq socket
+    void *zmq_ctx; // zeromq context
+    void *zmq_pub; // zeromq socket
+    uint16_t zmq_port; // listen port
 #endif
 } resetter_context_t;
 

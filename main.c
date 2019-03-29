@@ -14,18 +14,30 @@ static void on_signal_trapped(int signum) {
 }
 
 void usage(char **argv) {
-    printf("usage: %s [ -f filter ]\n", argv[0]);
+    printf("usage: %s [ -f filter ] [ -z zmq_listen_port ]\n", argv[0]);
 }
 
 int main(int argc, char **argv) {
+    memset(&ctx, 0, sizeof(resetter_context_t));
+
     int flag;
     char *filter = NULL;
 
-    while ((flag = getopt(argc, argv, "hf:")) != -1) {
+    while ((flag = getopt(argc, argv, "hf:z:")) != -1) {
         switch (flag) {
             case 'f':
                 // Filter expr
                 filter = optarg;
+                break;
+
+            case 'z':
+                // ZeroMQ port
+#ifdef USE_ZEROMQ
+                ctx.zmq_port = atoi(optarg);
+#else
+                fprintf(stderr, "zeromq is not enabled in this build\n");
+                usage(argv);
+#endif
                 break;
 
             case 'h':
