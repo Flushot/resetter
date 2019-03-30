@@ -18,6 +18,8 @@ static void on_arp_packet_captured(
         const struct pcap_pkthdr *,
         const u_char *);
 
+static void cleanup(resetter_context_t *);
+
 static int init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_LINK; // Layer 2 (link)
 
@@ -42,7 +44,7 @@ static void *arp_mitm_thread(void *vargp) {
     resetter_context_t *ctx = &thread->ctx;
 
     if (listener_start(ctx, on_arp_packet_captured) != 0) {
-        core_cleanup(ctx);
+        listener_stop(ctx);
         // return EXIT_FAILURE;
         return NULL;
     }
@@ -53,8 +55,10 @@ static void *arp_mitm_thread(void *vargp) {
 int start_arp_mitm_thread(thread_node *thread, char *device) {
     resetter_context_t *ctx = &thread->ctx;
     memset(ctx, 0, sizeof(resetter_context_t));
-    strcpy(ctx->filter_string, "arp");
+
+    ctx->cleanup = cleanup;
     ctx->device = device;
+    strcpy(ctx->filter_string, "arp");
 
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
 
@@ -138,5 +142,21 @@ static void on_arp_packet_captured(
             printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(saddr.sin_addr));
             printf("%s\n", ether_ntoa(arp_payload->ar_sha));
             break;
+    }
+}
+
+static void cleanup(resetter_context_t *ctx) {
+    if (is_listener_started(ctx)) {
+        listener_stop(ctx);
+    }
+
+    if (ctx->pcap != NULL) {
+        pcap_close(ctx->pcap);
+        ctx->pcap = NULL;
+    }
+
+    if (ctx->libnet != NULL) {
+        libnet_destroy(ctx->libnet);
+        ctx->libnet = NULL;
     }
 }

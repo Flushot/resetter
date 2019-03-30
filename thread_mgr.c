@@ -36,11 +36,10 @@ void thmgr_cleanup() {
     while ((thread = thread_list) != NULL) {
         resetter_context_t *ctx = &thread->ctx;
 
-        if (is_listener_started(ctx)) {
-            listener_stop(ctx);
+        if (ctx->cleanup) {
+            (*ctx->cleanup)(ctx);
         }
 
-        core_cleanup(ctx);
         pthread_cancel(thread->thread_id);
 
         thread_list = thread->next;

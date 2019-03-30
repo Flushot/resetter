@@ -6,6 +6,8 @@ static void on_synack_packet_captured(
         const struct pcap_pkthdr *,
         const u_char *);
 
+static void cleanup(resetter_context_t *);
+
 static int init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_RAW4; // Layer 3 (network)
 
@@ -149,7 +151,7 @@ static void *resetter_thread(void *vargp) {
     resetter_context_t *ctx = &thread->ctx;
 
     if (listener_start(ctx, on_synack_packet_captured) != 0) {
-        core_cleanup(ctx);
+        listener_stop(ctx);
         // return EXIT_FAILURE;
         return NULL;
     }
@@ -169,6 +171,7 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
         snprintf(ctx->filter_string, sizeof(ctx->filter_string), "tcp port %d", target_port);
     }
 
+    ctx->cleanup = cleanup;
     ctx->device = device;
     ctx->target_port = target_port;
     if (target_ip != NULL) {
@@ -222,4 +225,20 @@ static void on_synack_packet_captured(
             daddr, htons(tcp_hdr->th_dport),
             saddr, htons(tcp_hdr->th_sport),
             htonl(tcp_hdr->th_ack));
+}
+
+static void cleanup(resetter_context_t *ctx) {
+    if (is_listener_started(ctx)) {
+        listener_stop(ctx);
+    }
+
+    if (ctx->pcap != NULL) {
+        pcap_close(ctx->pcap);
+        ctx->pcap = NULL;
+    }
+
+    if (ctx->libnet != NULL) {
+        libnet_destroy(ctx->libnet);
+        ctx->libnet = NULL;
+    }
 }

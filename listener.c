@@ -77,8 +77,9 @@ int listener_start(resetter_context_t *ctx, listener_callback callback) {
 void listener_stop(resetter_context_t *ctx) {
     if (ctx->pcap != NULL) {
         pcap_breakloop(ctx->pcap);
-    }
 
-    // pcap must be closed before pcap_loop() is exited
-    core_cleanup(ctx);
+        // pcap must be closed before pcap_loop() is exited
+        pcap_close(ctx->pcap);
+        ctx->pcap = NULL;
+    }
 }
