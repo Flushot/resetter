@@ -126,16 +126,6 @@ int send_reset_packet(
     // Passing ptag to reuse packet instead of clearing (which is less CPU efficient)
     // libnet_clear_packet(ctx.libnet);
 
-    // Publish zeromq message.
-    if (ctx->zmq_pub != NULL) {
-        char queue_message[500];
-        snprintf(queue_message, sizeof(queue_message) / sizeof(char) - 1,
-                 "reset %s:%d %s:%d", saddr_str, sport, daddr_str, dport);
-        if (zmq_send(ctx->zmq_pub, queue_message, strlen(queue_message), 0) == -1) {
-            perror("zmq_send() failed");
-        }
-    }
-
     // Occasionally report packet sent/errors stats
     u_long curr_time = (u_long)time(0);
     if (ctx->libnet_last_stats_at == 0) {
@@ -188,7 +178,7 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
     update_pcap_filter(ctx);
     printf("Monitoring TCP traffic on %s ( %s )...\n", ctx->device, ctx->filter_string);
 
-    if (core_init(ctx) != 0 || init_libnet(ctx) != 0) {
+    if (init_libnet(ctx) != 0) {
         return -1;
     }
 

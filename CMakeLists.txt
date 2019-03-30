@@ -38,6 +38,6 @@ target_link_libraries(resetter pcap)
 #get_directory_property(MYDEFS COMPILE_DEFINITIONS)
 #if(MYDEFS MATCHES "USE_ZEROMQ")
     # zeromq
-    find_library(zmqp libzmq.a)
-    target_link_libraries(resetter zmq)
+    #find_library(zmqp libzmq.a)
+    #target_link_libraries(resetter zmq)
 #endif()

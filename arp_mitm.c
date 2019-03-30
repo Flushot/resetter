@@ -46,7 +46,7 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
 
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
 
-    if (core_init(ctx) != 0 || init_libnet(ctx) != 0) {
+    if (init_libnet(ctx) != 0) {
         return -1;
     }
 

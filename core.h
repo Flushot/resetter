@@ -8,7 +8,6 @@
 #include <pcap.h>
 #include <pthread.h>
 #include <libnet.h>
-#include <zmq.h>
 
 /**
  * Data structure with all handles
@@ -22,14 +21,9 @@ typedef struct _resetter_context_t {
 
     pcap_t *pcap; // pcap handle
     char filter_string[1000];
-    char interface[1000];
 
     libnet_t *libnet; // libnet handle
     u_long libnet_last_stats_at; // last time libnet stats were reported
-
-    void *zmq_ctx; // zeromq context
-    void *zmq_pub; // zeromq socket
-    uint16_t zmq_port; // listen port
 } resetter_context_t;
 
 /**
@@ -40,13 +34,6 @@ typedef struct _thread_node {
     resetter_context_t ctx;
     struct _thread_node *next;
 } thread_node;
-
-/**
- * Initialize context.
- *
- * @return 0 if successful, otherwise -1.
- */
-int core_init(resetter_context_t *);
 
 /**
  * Clean up: Close all handles.
