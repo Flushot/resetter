@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h> // getopt
 
+#include "arp_mitm.h"
+#include "listener.h"
 #include "resetter.h"
 
 static resetter_context_t ctx;
@@ -14,7 +16,9 @@ static void on_signal_trapped(int signum) {
 }
 
 void usage(char **argv) {
-    printf("usage: %s [ -f filter ] [ -z zmq_listen_port ]\n", argv[0]);
+    printf("resetter (c)2019 Chris Lyon\n\n"
+           "usage: %s [ -f bpf_filter ] [ -z zmq_listen_port ]\n",
+           argv[0]);
 }
 
 int main(int argc, char **argv) {
@@ -33,7 +37,7 @@ int main(int argc, char **argv) {
             case 'z':
                 // ZeroMQ port
 #ifdef USE_ZEROMQ
-                ctx.zmq_port = atoi(optarg);
+                ctx.zmq_port = strtol(optarg, NULL, 10);
 #else
                 fprintf(stderr, "zeromq is not enabled in this build\n");
                 usage(argv);
@@ -52,8 +56,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Testing
-    testfunc();
+    //testfunc();
 
     if (resetter_init(&ctx) != 0) {
         return EXIT_FAILURE;
