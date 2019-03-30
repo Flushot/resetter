@@ -58,6 +58,7 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
 
     ctx->cleanup = cleanup;
     ctx->device = device;
+    ctx->arp_poisoning = 1;
     strcpy(ctx->filter_string, "arp");
 
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
@@ -72,6 +73,13 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     }
 
     return 0;
+}
+
+static void unpoison(resetter_context_t *ctx) {
+    printf("Removing ARP poison...\n");
+    ctx->arp_poisoning = 0;
+
+    // TODO: remove arp poison
 }
 
 static char *ether_ntoa(uint8_t *ether_addr) {
@@ -128,6 +136,11 @@ static void on_arp_packet_captured(
     saddr.sin_addr.s_addr = *((uint32_t *)&(arp_payload->ar_spa));
     daddr.sin_addr.s_addr = *((uint32_t *)&(arp_payload->ar_tpa));
 
+    if (!ctx->arp_poisoning) {
+        return;
+    }
+
+    // Adding poison
     switch (htons(arp_hdr->ar_op)) {
         case ARPOP_REQUEST:
             // req to resolve address
@@ -146,6 +159,8 @@ static void on_arp_packet_captured(
 }
 
 static void cleanup(resetter_context_t *ctx) {
+    unpoison(ctx);
+
     if (is_listener_started(ctx)) {
         listener_stop(ctx);
     }

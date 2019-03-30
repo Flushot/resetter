@@ -21,6 +21,7 @@ typedef struct _resetter_context_t {
 
     pcap_t *pcap; // pcap handle
     char filter_string[1000];
+    int arp_poisoning;
 
     libnet_t *libnet; // libnet handle
     u_long libnet_last_stats_at; // last time libnet stats were reported
