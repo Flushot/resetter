@@ -8,15 +8,15 @@ static void on_arp_packet_captured(
 
 static void *arp_mitm_thread(void *vargp) {
     thread_node *thread = (thread_node *)vargp;
-    resetter_context_t ctx = thread->ctx;
+    resetter_context_t *ctx = &thread->ctx;
 
-    if (core_init(&ctx) != 0) {
+    if (core_init(ctx) != 0) {
         // return EXIT_FAILURE;
         return NULL;
     }
 
-    if (listener_start(&ctx, on_arp_packet_captured) != 0) {
-        core_cleanup(&ctx);
+    if (listener_start(ctx, on_arp_packet_captured) != 0) {
+        core_cleanup(ctx);
         // return EXIT_FAILURE;
         return NULL;
     }
@@ -27,11 +27,10 @@ static void *arp_mitm_thread(void *vargp) {
 int start_arp_mitm_thread(thread_node *thread) {
     printf("Starting ARP MITM thread...\n");
 
-    resetter_context_t ctx;
-    memset(&ctx, 0, sizeof(resetter_context_t));
+    resetter_context_t *ctx = &thread->ctx;
+    memset(ctx, 0, sizeof(resetter_context_t));
 
-    strcpy(ctx.filter_string, "arp");
-    thread->ctx = ctx;
+    strcpy(ctx->filter_string, "arp");
 
     if (pthread_create(&thread->thread_id, NULL, arp_mitm_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");

@@ -17,6 +17,9 @@
 typedef struct _resetter_context_t {
     char *device; // pcap capture and libnet device (e.g. "en0"); leave blank to detect.
 
+    struct sockaddr_in target_addr;
+    uint16_t target_port;
+
     pcap_t *pcap; // pcap handle
     char filter_string[1000];
 

@@ -24,6 +24,6 @@ int send_reset_packet(
         uint16_t,
         uint32_t);
 
-int start_resetter_thread(thread_node *, char *);
+int start_resetter_thread(thread_node *, char *, uint16_t);
 
 #endif

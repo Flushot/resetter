@@ -137,15 +137,15 @@ int send_reset_packet(
 
 static void *resetter_thread(void *vargp) {
     thread_node *thread = (thread_node *)vargp;
-    resetter_context_t ctx = thread->ctx;
+    resetter_context_t *ctx = &thread->ctx;
 
-    if (core_init(&ctx) != 0) {
+    if (core_init(ctx) != 0) {
         // return EXIT_FAILURE;
         return NULL;
     }
 
-    if (listener_start(&ctx, on_synack_packet_captured) != 0) {
-        core_cleanup(&ctx);
+    if (listener_start(ctx, on_synack_packet_captured) != 0) {
+        core_cleanup(ctx);
         // return EXIT_FAILURE;
         return NULL;
     }
@@ -153,18 +153,25 @@ static void *resetter_thread(void *vargp) {
     return NULL;
 }
 
-int start_resetter_thread(thread_node *thread, char *filter_string) {
-    resetter_context_t ctx;
-    memset(&ctx, 0, sizeof(resetter_context_t));
+int start_resetter_thread(thread_node *thread, char *target_ip, uint16_t target_port) {
+    resetter_context_t *ctx = &thread->ctx;
+    memset(ctx, 0, sizeof(resetter_context_t));
 
-    if (filter_string != NULL && strlen(filter_string) > 0) {
-        strncpy(ctx.filter_string, filter_string, sizeof(ctx.filter_string));
+    if (target_ip != NULL && target_port > 0) {
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "( host %s && tcp port %d )", target_ip, target_port);
+    } else if (target_ip != NULL) {
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "host %s", target_ip);
+    } else if (target_port > 0) {
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "tcp port %d", target_port);
     }
 
-    update_pcap_filter(&ctx);
-    printf("Starting resetter thread ( %s )...\n", ctx.filter_string);
+    ctx->target_port = target_port;
+    if (target_ip != NULL) {
+        ctx->target_addr.sin_addr.s_addr = inet_addr(target_ip);
+    }
 
-    thread->ctx = ctx;
+    update_pcap_filter(ctx);
+    printf("Starting resetter thread ( %s )...\n", ctx->filter_string);
 
     if (pthread_create(&thread->thread_id, NULL, resetter_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");
@@ -182,7 +189,14 @@ static void on_synack_packet_captured(
     struct libnet_tcp_hdr *tcp_hdr = (struct libnet_tcp_hdr *)(packet + LIBNET_ETH_H + LIBNET_TCP_H);
 
     if (!(tcp_hdr->th_flags & (TH_SYN | TH_ACK))) {
-        // Not a SYN-ACK packet (which should never happen)
+        // Not a SYN-ACK packet (which should never happen because of bpf expr)
+        return;
+    }
+
+    if (ctx->target_port > 0 &&
+        htons(tcp_hdr->th_dport) != ctx->target_port &&
+        htons(tcp_hdr->th_sport) != ctx->target_port) {
+        // Port didn't match (which should never happen because of bpf expr)
         return;
     }
 
@@ -195,8 +209,7 @@ static void on_synack_packet_captured(
 
     // SYN-ACK packet sent from dest to source, so send a RST packet
     // back to dest (spoofed as source).
-    send_reset_packet(
-            ctx,
+    send_reset_packet(ctx,
             daddr, htons(tcp_hdr->th_dport),
             saddr, htons(tcp_hdr->th_sport),
             htonl(tcp_hdr->th_ack));
