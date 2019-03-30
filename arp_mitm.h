@@ -3,6 +3,6 @@
 
 #include "core.h"
 
-int start_arp_mitm_thread(thread_node *);
+int start_arp_mitm_thread(thread_node *, char *);
 
 #endif

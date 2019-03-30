@@ -6,6 +6,25 @@ static void on_synack_packet_captured(
         const struct pcap_pkthdr *,
         const u_char *);
 
+static int init_libnet(resetter_context_t *ctx) {
+    int injection_type = LIBNET_RAW4; // Layer 3 (network)
+
+    char errbuf[LIBNET_ERRBUF_SIZE];
+
+    ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
+    if (ctx->libnet == NULL) {
+        fprintf(stderr, "libnet_init() failed: %s\n", errbuf);
+        return -1;
+    }
+
+    if (libnet_seed_prand(ctx->libnet) == -1) {
+        fprintf(stderr, "libnet_seed_prand() failed: %s\n",libnet_geterror(ctx->libnet));
+        return -1;
+    }
+
+    return 0;
+}
+
 static int update_pcap_filter(resetter_context_t *ctx) {
     char *filter_suffix = ctx->filter_string;
     if (filter_suffix != NULL && strlen(filter_suffix) == 0) {
@@ -44,7 +63,7 @@ int send_reset_packet(
     strncpy(saddr_str, inet_ntoa(saddr.sin_addr), sizeof(saddr_str));
     strncpy(daddr_str, inet_ntoa(daddr.sin_addr), sizeof(daddr_str));
 
-    printf("Resetting TCP connection from %s:%d <-> %s:%d\n",
+    printf("Resetting %s:%d <-> %s:%d\n",
            saddr_str, sport,
            daddr_str, dport);
 
@@ -139,11 +158,6 @@ static void *resetter_thread(void *vargp) {
     thread_node *thread = (thread_node *)vargp;
     resetter_context_t *ctx = &thread->ctx;
 
-    if (core_init(ctx) != 0) {
-        // return EXIT_FAILURE;
-        return NULL;
-    }
-
     if (listener_start(ctx, on_synack_packet_captured) != 0) {
         core_cleanup(ctx);
         // return EXIT_FAILURE;
@@ -153,7 +167,7 @@ static void *resetter_thread(void *vargp) {
     return NULL;
 }
 
-int start_resetter_thread(thread_node *thread, char *target_ip, uint16_t target_port) {
+int start_resetter_thread(thread_node *thread, char *device, char *target_ip, uint16_t target_port) {
     resetter_context_t *ctx = &thread->ctx;
     memset(ctx, 0, sizeof(resetter_context_t));
 
@@ -165,13 +179,18 @@ int start_resetter_thread(thread_node *thread, char *target_ip, uint16_t target_
         snprintf(ctx->filter_string, sizeof(ctx->filter_string), "tcp port %d", target_port);
     }
 
+    ctx->device = device;
     ctx->target_port = target_port;
     if (target_ip != NULL) {
         ctx->target_addr.sin_addr.s_addr = inet_addr(target_ip);
     }
 
     update_pcap_filter(ctx);
-    printf("Starting resetter thread ( %s )...\n", ctx->filter_string);
+    printf("Monitoring TCP traffic on %s ( %s )...\n", ctx->device, ctx->filter_string);
+
+    if (core_init(ctx) != 0 || init_libnet(ctx) != 0) {
+        return -1;
+    }
 
     if (pthread_create(&thread->thread_id, NULL, resetter_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");

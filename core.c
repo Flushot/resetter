@@ -31,27 +31,8 @@ static int init_zeromq(resetter_context_t *ctx) {
     return 0;
 }
 
-static int init_libnet(resetter_context_t *ctx) {
-    int injection_type = LIBNET_RAW4; // Lowest layer is IPv4
-
-    char errbuf[LIBNET_ERRBUF_SIZE];
-
-    ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
-    if (ctx->libnet == NULL) {
-        fprintf(stderr, "libnet_init() failed: %s\n", errbuf);
-        return -1;
-    }
-
-    if (libnet_seed_prand(ctx->libnet) == -1) {
-        fprintf(stderr, "libnet_seed_prand() failed: %s\n",libnet_geterror(ctx->libnet));
-        return -1;
-    }
-
-    return 0;
-}
-
 int core_init(resetter_context_t *ctx) {
-    if (init_zeromq(ctx) != 0 || init_libnet(ctx) != 0) {
+    if (init_zeromq(ctx) != 0) {
         core_cleanup(ctx);
         return -1;
     }

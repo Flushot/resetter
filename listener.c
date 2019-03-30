@@ -21,11 +21,7 @@ static int listener_init(resetter_context_t *ctx) {
     char errbuf[PCAP_ERRBUF_SIZE];
 
     if (ctx->device == NULL) {
-        ctx->device = pcap_lookupdev(errbuf);
-    }
-
-    if (ctx->device == NULL) {
-        fprintf(stderr, "pcap_lookupdev() failed: %s\n", errbuf);
+        fprintf(stderr, "Interface is required\n");
         return -1;
     }
 
@@ -73,7 +69,6 @@ int listener_start(resetter_context_t *ctx, listener_callback callback) {
     args.callback = callback;
 
     // Listen for packets
-    printf("Listening for packets on %s...\n", ctx->device);
     pcap_loop(ctx->pcap, -1, on_packet_captured, (u_char *)&args);
 
     return 0;
