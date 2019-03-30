@@ -1,94 +1,18 @@
-#include <stdio.h>
-#include <inttypes.h> // PRId64
-
 #include "resetter.h"
+#include "listener.h"
 
-static int init_zeromq(resetter_context_t *ctx) {
-#ifdef USE_ZEROMQ
-    if (ctx->zmq_port == 0) {
-        // Disable zmq: No port specified
-        return 0;
+static void on_synack_packet_captured(
+        resetter_context_t *,
+        const struct pcap_pkthdr *,
+        const u_char *);
+
+static int update_pcap_filter(resetter_context_t *ctx) {
+    char *filter_suffix = ctx->filter_string;
+    if (filter_suffix != NULL && strlen(filter_suffix) == 0) {
+        // Default filter: All TCP traffic
+        filter_suffix = "tcp";
     }
 
-    ctx->zmq_ctx = zmq_ctx_new();
-    if (ctx->zmq_ctx == NULL) {
-        perror("zmq_ctx_new() failed");
-        return -1;
-    }
-
-    ctx->zmq_pub = zmq_socket(ctx->zmq_ctx, ZMQ_PUB);
-    if (ctx->zmq_pub == NULL) {
-        perror("zmq_socket() failed");
-        return -1;
-    }
-
-    char zmq_url[500];
-    snprintf(zmq_url, sizeof(zmq_url) / sizeof(char) - 1, "tcp://*:%d", ctx->zmq_port);
-
-    if (zmq_bind(ctx->zmq_pub, zmq_url) == -1) {
-        perror("zmq_bind() failed");
-        return -1;
-    }
-
-    printf("ZeroMQ listening at: %s\n", zmq_url);
-#endif
-
-    return 0;
-}
-
-static int init_libnet(resetter_context_t *ctx) {
-    int injection_type = LIBNET_RAW4; // Lowest layer is IPv4
-
-    char errbuf[LIBNET_ERRBUF_SIZE];
-
-    ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
-    if (ctx->libnet == NULL) {
-        fprintf(stderr, "libnet_init() failed: %s\n", errbuf);
-        return -1;
-    }
-
-    if (libnet_seed_prand(ctx->libnet) == -1) {
-        fprintf(stderr, "libnet_seed_prand() failed: %s\n",libnet_geterror(ctx->libnet));
-        return -1;
-    }
-
-    return 0;
-}
-
-/**
- * Compile and set pcap packet filter, which will determine what gets sent to
- * the on_packet_captured function.
- *
- * @param ctx
- * @param filter_string BPF filter string http://biot.com/capstats/bpf.html
- * @return 0 if successful, otherwise -1.
- */
-static int init_pcap(resetter_context_t *ctx) {
-    const int snapshot_length = 2048;
-    const int promiscuous = 1; // Promiscuous mode
-    const int timeout = 1; // Packet buffer timeout https://www.tcpdump.org/manpages/pcap.3pcap.html
-
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    if (ctx->device == NULL) {
-        ctx->device = pcap_lookupdev(errbuf);
-    }
-
-    if (ctx->device == NULL) {
-        fprintf(stderr, "pcap_lookupdev() failed: %s\n", errbuf);
-        return -1;
-    }
-
-    ctx->pcap = pcap_open_live(ctx->device, snapshot_length, promiscuous, timeout, errbuf);
-    if (ctx->pcap == NULL) {
-        fprintf(stderr, "pcap_open_live() failed: %s\n", errbuf);
-        return -1;
-    }
-
-    return 0;
-}
-
-static int set_pcap_filter(resetter_context_t *ctx, char *filter_suffix) {
     // Always prepend with this condition to just include SYN-ACK packets
     char *filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
     char *filter_string = (char *)malloc(sizeof(char) * strlen(filter_prefix) + strlen(filter_suffix) + 1);
@@ -101,23 +25,8 @@ static int set_pcap_filter(resetter_context_t *ctx, char *filter_suffix) {
     strcat(filter_string, filter_prefix);
     strcat(filter_string, filter_suffix);
 
-    printf("Filter: %s\n", filter_string);
-
-    // Compile BPF filter
-    struct bpf_program filter;
-    if (pcap_compile(ctx->pcap, &filter, filter_string, 0, PCAP_NETMASK_UNKNOWN) == PCAP_ERROR) {
-        pcap_perror(ctx->pcap, "pcap_compile() failed");
-        free(filter_string);
-        return -1;
-    }
-
+    strncpy(ctx->filter_string, filter_string, sizeof(ctx->filter_string));
     free(filter_string);
-
-    // Use compiled filter
-    if (pcap_setfilter(ctx->pcap, &filter) == PCAP_ERROR) {
-        pcap_perror(ctx->pcap, "pcap_setfilter() failed");
-        return -1;
-    }
 
     return 0;
 }
@@ -198,7 +107,6 @@ int send_reset_packet(
     // Passing ptag to reuse packet instead of clearing (which is less CPU efficient)
     // libnet_clear_packet(ctx.libnet);
 
-#ifdef USE_ZEROMQ
     // Publish zeromq message.
     if (ctx->zmq_pub != NULL) {
         char queue_message[500];
@@ -208,7 +116,6 @@ int send_reset_packet(
             perror("zmq_send() failed");
         }
     }
-#endif
 
     // Occasionally report packet sent/errors stats
     u_long curr_time = (u_long)time(0);
@@ -228,17 +135,56 @@ int send_reset_packet(
     return 0;
 }
 
-/**
- * Packet captured by pcap.
- *
- * @param user_args
- * @param cap_header
- * @param packet raw packet data.
- */
-static void on_packet_captured(u_char *user_args, const struct pcap_pkthdr *cap_header, const u_char *packet) {
-    resetter_context_t *ctx = (resetter_context_t *)user_args;
+static void *resetter_thread(void *vargp) {
+    thread_node *thread = (thread_node *)vargp;
+    resetter_context_t ctx = thread->ctx;
+
+    if (core_init(&ctx) != 0) {
+        // return EXIT_FAILURE;
+        return NULL;
+    }
+
+    if (listener_start(&ctx, on_synack_packet_captured) != 0) {
+        core_cleanup(&ctx);
+        // return EXIT_FAILURE;
+        return NULL;
+    }
+
+    return NULL;
+}
+
+int start_resetter_thread(thread_node *thread, char *filter_string) {
+    resetter_context_t ctx;
+    memset(&ctx, 0, sizeof(resetter_context_t));
+
+    if (filter_string != NULL && strlen(filter_string) > 0) {
+        strncpy(ctx.filter_string, filter_string, sizeof(ctx.filter_string));
+    }
+
+    update_pcap_filter(&ctx);
+    printf("Starting resetter thread ( %s )...\n", ctx.filter_string);
+
+    thread->ctx = ctx;
+
+    if (pthread_create(&thread->thread_id, NULL, resetter_thread, (void *)thread) != 0) {
+        perror("pthread_create() failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+static void on_synack_packet_captured(
+        resetter_context_t *ctx,
+        const struct pcap_pkthdr *cap_header,
+        const u_char *packet) {
     struct libnet_ipv4_hdr *ip_hdr = (struct libnet_ipv4_hdr *)(packet + LIBNET_ETH_H);
     struct libnet_tcp_hdr *tcp_hdr = (struct libnet_tcp_hdr *)(packet + LIBNET_ETH_H + LIBNET_TCP_H);
+
+    if (!(tcp_hdr->th_flags & (TH_SYN | TH_ACK))) {
+        // Not a SYN-ACK packet (which should never happen)
+        return;
+    }
 
     // Get saddr/daddr from IPv4 header
     struct sockaddr_in saddr, daddr;
@@ -247,67 +193,11 @@ static void on_packet_captured(u_char *user_args, const struct pcap_pkthdr *cap_
     saddr.sin_addr.s_addr = *((uint32_t *)&(ip_hdr->ip_src));
     daddr.sin_addr.s_addr = *((uint32_t *)&(ip_hdr->ip_dst));
 
-    if (tcp_hdr->th_flags & (TH_SYN | TH_ACK)) {
-        // SYN-ACK packet sent from dest to source, so send a RST packet
-        // back to dest (spoofed as source).
-        send_reset_packet(
-                ctx,
-                daddr, htons(tcp_hdr->th_dport),
-                saddr, htons(tcp_hdr->th_sport),
-                htonl(tcp_hdr->th_ack));
-    }
-}
-
-int resetter_init(resetter_context_t *ctx) {
-    if (init_zeromq(ctx) != 0 || init_libnet(ctx) != 0 || init_pcap(ctx) != 0) {
-        resetter_cleanup(ctx);
-        return -1;
-    }
-
-    return 0;
-}
-
-int resetter_start(resetter_context_t *ctx, char *filter_string) {
-    if (set_pcap_filter(ctx, filter_string) != 0) {
-        return -1;
-    }
-
-    // Listen for packets
-    printf("Listening for packets on %s...\n", ctx->device);
-    pcap_loop(ctx->pcap, -1, on_packet_captured, (u_char *)ctx);
-
-    return 0;
-}
-
-void resetter_stop(resetter_context_t *ctx) {
-    if (ctx->pcap != NULL) {
-        pcap_breakloop(ctx->pcap);
-    }
-
-    // pcap must be closed before pcap_loop() is exited
-    resetter_cleanup(ctx);
-}
-
-void resetter_cleanup(resetter_context_t *ctx) {
-    if (ctx->pcap != NULL) {
-        pcap_close(ctx->pcap);
-        ctx->pcap = NULL;
-    }
-
-    if (ctx->libnet != NULL) {
-        libnet_destroy(ctx->libnet);
-        ctx->libnet = NULL;
-    }
-
-#ifdef USE_ZEROMQ
-    if (ctx->zmq_pub != NULL) {
-        zmq_close(ctx->zmq_pub);
-        ctx->zmq_pub = NULL;
-    }
-
-    if (ctx->zmq_ctx != NULL) {
-        zmq_ctx_destroy(ctx->zmq_ctx);
-        ctx->zmq_ctx = NULL;
-    }
-#endif
+    // SYN-ACK packet sent from dest to source, so send a RST packet
+    // back to dest (spoofed as source).
+    send_reset_packet(
+            ctx,
+            daddr, htons(tcp_hdr->th_dport),
+            saddr, htons(tcp_hdr->th_sport),
+            htonl(tcp_hdr->th_ack));
 }

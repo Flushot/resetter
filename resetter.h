@@ -1,43 +1,7 @@
-#include <libnet.h>
-#include <pcap.h>
-#include <zmq.h>
+#ifndef __RESETTER_H__
+#define __RESETTER_H__
 
-/**
- * Data structure with all handles
- * (so that cleanup can be simplified).
- */
-typedef struct _resetter_context_t {
-    char *device; // pcap capture and libnet device (e.g. "en0"); leave blank to detect.
-
-    pcap_t *pcap; // pcap handle
-
-    libnet_t *libnet; // libnet handle
-    u_long libnet_last_stats_at; // last time libnet stats were reported
-
-#ifdef USE_ZEROMQ
-    void *zmq_ctx; // zeromq context
-    void *zmq_pub; // zeromq socket
-    uint16_t zmq_port; // listen port
-#endif
-} resetter_context_t;
-
-/**
- * Initialize context.
- *
- * @return 0 if successful, otherwise -1.
- */
-int resetter_init(resetter_context_t *);
-
-int resetter_start(resetter_context_t *, char *);
-
-void resetter_stop(resetter_context_t *);
-
-/**
- * Clean up: Close all handles.
- *
- * This function can safely be called multiple times.
- */
-void resetter_cleanup(resetter_context_t *);
+#include "core.h"
 
 /**
  * Send a RST packet (spoofed from source client) to dest server.
@@ -59,3 +23,7 @@ int send_reset_packet(
         struct sockaddr_in,
         uint16_t,
         uint32_t);
+
+int start_resetter_thread(thread_node *, char *);
+
+#endif
