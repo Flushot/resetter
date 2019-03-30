@@ -75,7 +75,7 @@ static char *ether_ntoa(uint8_t *ether_addr) {
     addr_buf[17] = 0;
 
     snprintf(addr_buf, sizeof(addr_buf),
-             "%02X:%02X:%02X:%02X:%02X:%02X",
+             "%02x:%02x:%02x:%02x:%02x:%02x",
              ether_addr[0],
              ether_addr[1],
              ether_addr[2],
@@ -135,8 +135,8 @@ static void on_arp_packet_captured(
         case ARPOP_REPLY:
             // resp to previous request
             printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
-            printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
-            printf("%s\n", ether_ntoa(arp_payload->ar_tha));
+            printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(saddr.sin_addr));
+            printf("%s\n", ether_ntoa(arp_payload->ar_sha));
             break;
     }
 }
