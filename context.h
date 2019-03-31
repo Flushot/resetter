@@ -29,20 +29,4 @@ typedef struct _resetter_context_t {
     void (*cleanup)(struct _resetter_context_t *);
 } resetter_context_t;
 
-/**
- * Linked list for tracking threads
- */
-typedef struct _thread_node {
-    pthread_t thread_id;
-    resetter_context_t ctx;
-    struct _thread_node *next;
-} thread_node;
-
-/**
- * Clean up: Close all handles.
- *
- * This function can safely be called multiple times.
- */
-void core_cleanup(resetter_context_t *);
-
 #endif

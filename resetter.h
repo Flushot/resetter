@@ -1,7 +1,8 @@
 #ifndef __RESETTER_H__
 #define __RESETTER_H__
 
-#include "core.h"
+#include "context.h"
+#include "thread_mgr.h"
 
 /**
  * Send a RST packet (spoofed from source client) to dest server.

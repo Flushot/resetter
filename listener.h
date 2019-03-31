@@ -1,7 +1,7 @@
 #ifndef __LISTENER_H__
 #define __LISTENER_H__
 
-#include "core.h"
+#include "context.h"
 
 typedef void (*listener_callback)(
         resetter_context_t *ctx,

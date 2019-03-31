@@ -1,7 +1,16 @@
 #ifndef __THREAD_MGR_H__
 #define __THREAD_MGR_H__
 
-#include "core.h"
+#include "context.h"
+
+/**
+ * Linked list for tracking threads
+ */
+typedef struct _thread_node {
+    pthread_t thread_id;
+    resetter_context_t ctx;
+    struct _thread_node *next;
+} thread_node;
 
 void thmgr_append_thread(thread_node *);
 
