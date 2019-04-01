@@ -8,7 +8,14 @@ set(resetter_VERSION_MINOR 0)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 #add_definitions(-DUSE_ZEROMQ)
-add_executable(resetter main.c thread_mgr.c resetter.c listener.c arp_mitm.c asmtest.asm)
+add_executable(resetter
+        main.c
+        hash_table.c
+        thread_mgr.c
+        resetter.c
+        listener.c
+        arp_mitm.c
+        asmtest.asm)
 install(TARGETS resetter DESTINATION bin)
 
 # C compiler
