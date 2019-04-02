@@ -1,6 +1,13 @@
 #ifndef __HASH_TABLE_H__
 #define __HASH_TABLE_H__
 
+#include "list.h"
+
+/**
+ * Closed-addressed general purpose hash table with
+ * a customizable hash function and key comparator.
+ */
+
 typedef struct _hash_table_entry {
     void *key;
     void *value;

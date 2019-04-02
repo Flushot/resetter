@@ -11,6 +11,7 @@ set(resetter_VERSION_MINOR 0)
 add_executable(resetter
         main.c
         hash_table.c
+        list.c
         thread_mgr.c
         resetter.c
         listener.c
