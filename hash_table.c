@@ -50,6 +50,11 @@ int ht_set(hash_table *ht, void *key, void *value) {
     list *list;
     hash_table_entry *entry;
 
+    if (ht->index == NULL) {
+        fprintf(stderr, "hash table not initialized");
+        return -1;
+    }
+
     entry = (hash_table_entry *)malloc(sizeof(hash_table_entry));
     if (entry == NULL) {
         perror("malloc() failed");
@@ -79,6 +84,11 @@ void *ht_get(hash_table *ht, void *key) {
     list_node *curr;
     hash_table_entry *entry;
 
+    if (ht->index == NULL) {
+        fprintf(stderr, "hash table not initialized");
+        return NULL;
+    }
+
     index = find_index(ht, key);
     list = ht->index[index];
     if (list == NULL || list->size == 0) {
@@ -106,6 +116,11 @@ int ht_del(hash_table *ht, void *key) {
     list_node *curr;
     hash_table_entry *entry;
 
+    if (ht->index == NULL) {
+        fprintf(stderr, "hash table not initialized");
+        return -1;
+    }
+
     index = find_index(ht, key);
     list = ht->index[index];
     if (list == NULL || list->size == 0) {
@@ -113,11 +128,13 @@ int ht_del(hash_table *ht, void *key) {
         return -1;
     }
 
+    int found = 0;
     curr = list->head;
     do {
         entry = curr->value;
         if ((*ht->key_cmp)(entry->key, key) == 0) {
             list_del_at(list, i);
+            found = 1;
         } else {
             ++i;
         }
@@ -126,7 +143,7 @@ int ht_del(hash_table *ht, void *key) {
     } while (curr != NULL);
 
     // No entry
-    return -1;
+    return found ? 0 : -1;
 }
 
 int ht_destroy(hash_table *ht) {
@@ -135,21 +152,24 @@ int ht_destroy(hash_table *ht) {
     list_node *curr;
     hash_table_entry *entry;
 
-    for (i = 0; i < ht->size; ++i) {
-        list = ht->index[i];
-        if (list != NULL) {
-            curr = list->head;
-            if (curr != NULL) {
-                do {
-                    entry = curr->value;
-                    free(entry);
-                    curr = curr->next;
-                } while (curr != NULL);
+    if (ht->index != NULL) {
+        for (i = 0; i < ht->size; ++i) {
+            list = ht->index[i];
+            if (list != NULL) {
+                curr = list->head;
+                if (curr != NULL) {
+                    do {
+                        entry = curr->value;
+                        free(entry);
+                        curr = curr->next;
+                    } while (curr != NULL);
+                }
             }
         }
-    }
 
-    free(ht->index);
+        free(ht->index);
+        ht->index = NULL;
+    }
 
     return 0;
 }
@@ -158,6 +178,11 @@ void ht_dump(hash_table *ht) {
     int i;
     list *list;
     list_node *iter;
+
+    if (ht->index == NULL) {
+        fprintf(stderr, "hash table not initialized");
+        return;
+    }
 
     for (i = 0; i < ht->size; ++i) {
         list = ht->index[i];

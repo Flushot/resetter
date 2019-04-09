@@ -222,5 +222,8 @@ int list_destroy(list *lst) {
         }
     }
 
+    lst->size = 0;
+    lst->head = NULL;
+
     return 0;
 }
