@@ -12,26 +12,28 @@ typedef struct _list {
     size_t size;
 } list;
 
-int list_init(list *list);
+int list_init(list *);
 
-int list_insert_at(list *list, void *value, int pos);
+int list_insert_at(list *, void *, int);
 
-void *list_get_at(list *list, int pos);
+void *list_get_at(list *, int);
 
-int list_shift(list *list, void *value);
+int list_shift(list *, void *);
 
-void *list_unshift(list *list);
+void *list_unshift(list *);
 
-int list_push(list *list, void *value);
+int list_push(list *, void *);
 
-void *list_pop(list *list);
+list_node *list_tail_node(list *lst);
 
-int list_del_at(list *list, int pos);
+void *list_tail(list *);
 
-size_t list_size(list *list);
+void *list_pop(list *);
 
-void list_dump(list *list);
+int list_del_at(list *, int pos);
 
-int list_destroy(list *list);
+void list_dump(list *);
+
+int list_destroy(list *);
 
 #endif

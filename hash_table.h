@@ -11,7 +11,6 @@
 typedef struct _hash_table_entry {
     void *key;
     void *value;
-    struct _hash_table_entry *next;
 } hash_table_entry;
 
 typedef int (*key_cmp_func)(void *, void *);
@@ -20,7 +19,7 @@ typedef uint32_t (*key_hash_func)(void *, size_t);
 
 typedef struct _hash_table {
     size_t size;
-    hash_table_entry **index;
+    list **index;
     key_cmp_func key_cmp;
     key_hash_func key_hash;
 } hash_table;

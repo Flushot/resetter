@@ -13,22 +13,24 @@ static int default_key_cmp(void *key_a, void *key_b) {
 }
 
 static uint32_t default_key_hash(void *key, size_t ht_size) {
-    char *strkey = (char *)key;
-    uint32_t hash = 0;
     int i;
+    uint32_t hash = 0;
+    char *str_key = (char *)key;
 
-    for (i = 0; i < strlen(strkey); ++i) {
-        hash += (uint8_t)strkey[i] % (ht_size - 1);
+    for (i = 0; i < strlen(str_key); ++i) {
+        hash += (uint8_t)str_key[i] % (ht_size - 1);
     }
 
     return hash;
 }
 
 int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func key_hash) {
+    size_t index_size;
+
     memset(ht, 0, sizeof(hash_table));
     ht->size = size;
 
-    size_t index_size = size * sizeof(hash_table_entry);
+    index_size = size * sizeof(list);
     ht->index = malloc(index_size);
     if (ht->index == NULL) {
         perror("malloc() failed");
@@ -44,7 +46,11 @@ int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func k
 }
 
 int ht_set(hash_table *ht, void *key, void *value) {
-    hash_table_entry *entry = (hash_table_entry *)malloc(sizeof(hash_table_entry));
+    int index;
+    list *list;
+    hash_table_entry *entry;
+
+    entry = (hash_table_entry *)malloc(sizeof(hash_table_entry));
     if (entry == NULL) {
         perror("malloc() failed");
         return -1;
@@ -53,96 +59,71 @@ int ht_set(hash_table *ht, void *key, void *value) {
     memset(entry, 0, sizeof(hash_table_entry));
     entry->key = key;
     entry->value = value;
-    entry->next = NULL;
 
-    int index = find_index(ht, key);
-    void *curr = ht->index[index];
-    if (curr == NULL) {
-        // First entry
-        *(ht->index + index) = entry;
-        return 0;
-    } else {
-        // Collision: Append to tail or update existing value
-        hash_table_entry *tail, *list = curr;
-        do {
-            tail = list;
-            if ((*ht->key_cmp)(tail->key, key) == 0) {
-                // Update existing value
-                tail->value = value;
-                return 0;
-            }
-
-            if (list->next == NULL) {
-                // Append new value to tail
-                list->next = entry;
-                return 0;
-            }
-
-            list = list->next;
-        } while (list != NULL);
+    index = find_index(ht, key);
+    list = *(ht->index + index);
+    if (list == NULL) {
+        // First entry: Start a new linked list
+        list = *(ht->index + index) = malloc(sizeof(list));
+        if (list_init(list) != 0) {
+            return -1;
+        }
     }
 
-    return -1;
+    return list_push(*(ht->index + index), entry);
 }
 
 void *ht_get(hash_table *ht, void *key) {
-    int index = find_index(ht, key);
-    hash_table_entry *entry = ht->index[index];
-    if (entry == NULL) {
+    int index;
+    list *list;
+    list_node *curr;
+    hash_table_entry *entry;
+
+    index = find_index(ht, key);
+    list = ht->index[index];
+    if (list == NULL || list->size == 0) {
         // No entry
         return NULL;
     }
 
-    hash_table_entry *tail, *list = entry;
+    curr = list->head;
     do {
-        tail = list;
-        if ((*ht->key_cmp)(tail->key, key) == 0) {
-            return tail->value;
+        entry = curr->value;
+        if ((*ht->key_cmp)(entry->key, key) == 0) {
+            return entry->value;
         }
 
-        list = list->next;
-    } while (list != NULL);
+        curr = curr->next;
+    } while (curr != NULL);
 
     // No entry
     return NULL;
 }
 
 int ht_del(hash_table *ht, void *key) {
-    int index = find_index(ht, key);
-    hash_table_entry *entry = ht->index[index];
-    if (entry == NULL) {
+    int index, i = 0;
+    list *list;
+    list_node *curr;
+    hash_table_entry *entry;
+
+    index = find_index(ht, key);
+    list = ht->index[index];
+    if (list == NULL || list->size == 0) {
         // No entry
         return -1;
     }
 
-    if (entry->next == NULL) {
-        // Single entry
-        if ((*ht->key_cmp)(entry->key, key) == 0) {
-            free(entry);
-            ht->index[index] = NULL;
-            return 0;
-        } else {
-            // No entry
-            return -1;
-        }
-    }
-
-    // Multiple entries
-    hash_table_entry *curr, *prev = NULL, *list = entry;
+    curr = list->head;
     do {
-        curr = list;
-        if ((*ht->key_cmp)(curr->key, key) == 0) {
-            // Remove item from linked list
-            if (prev != NULL) {
-                prev->next = curr->next;
-            }
-
-            free(curr);
+        entry = curr->value;
+        if ((*ht->key_cmp)(entry->key, key) == 0) {
+            list_del_at(list, i);
+        } else {
+            ++i;
         }
 
-        prev = curr;
-        list = list->next;
-    } while (list != NULL);
+        curr = curr->next;
+    } while (curr != NULL);
 
     // No entry
     return -1;
@@ -150,15 +131,21 @@ int ht_del(hash_table *ht, void *key) {
 
 int ht_destroy(hash_table *ht) {
     int i;
+    list *list;
+    list_node *curr;
+    hash_table_entry *entry;
 
     for (i = 0; i < ht->size; ++i) {
-        hash_table_entry *curr, *list = ht->index[i];
+        list = ht->index[i];
         if (list != NULL) {
-            do {
-                curr = list;
-                list = curr->next;
-                free(curr);
-            } while (list != NULL);
+            curr = list->head;
+            if (curr != NULL) {
+                do {
+                    entry = curr->value;
+                    free(entry);
+                    curr = curr->next;
+                } while (curr != NULL);
+            }
         }
     }
 
@@ -169,15 +156,25 @@ int ht_destroy(hash_table *ht) {
 
 void ht_dump(hash_table *ht) {
     int i;
+    list *list;
+    list_node *iter;
 
     for (i = 0; i < ht->size; ++i) {
-        hash_table_entry *curr, *list = ht->index[i];
+        list = ht->index[i];
         if (list != NULL) {
-            do {
-                curr = list;
-                printf("%s (%d): %s\n", (char *)curr->key, i, (char *)curr->value);
-                list = curr->next;
-            } while (list != NULL);
+            printf("%d: ", i);
+            printf("[ ");
+
+            iter = list->head;
+            if (iter != NULL) {
+                do {
+                    hash_table_entry *entry = iter->value;
+                    printf("\"%s\" => \"%s\", ", entry->key, entry->value);
+                    iter = iter->next;
+                } while (iter != NULL);
+            }
+
+            printf("]\n");
         }
     }
 }
