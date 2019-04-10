@@ -61,6 +61,12 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     ctx->arp_poisoning = 1;
     strcpy(ctx->filter_string, "arp");
 
+    // Init ARP table
+    ctx->arp_table = malloc(sizeof(hash_table));
+    if (ht_init(ctx->arp_table, 100, NULL, NULL) != 0) {
+        return -1;
+    }
+
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
 
     if (init_libnet(ctx) != 0) {
@@ -79,7 +85,8 @@ static void unpoison(resetter_context_t *ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
-    // TODO: remove arp poison
+    // TODO: remove arp poison by restoring ctx->arp_table
+    ht_dump(ctx->arp_table);
 }
 
 static char *ether_ntoa(uint8_t *ether_addr) {
@@ -154,6 +161,7 @@ static void on_arp_packet_captured(
             printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
             printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(saddr.sin_addr));
             printf("%s\n", ether_ntoa(arp_payload->ar_sha));
+            ht_set(ctx->arp_table, inet_ntoa(saddr.sin_addr), ether_ntoa(eth_hdr->ether_dhost));
             break;
     }
 }
@@ -173,5 +181,11 @@ static void cleanup(resetter_context_t *ctx) {
     if (ctx->libnet != NULL) {
         libnet_destroy(ctx->libnet);
         ctx->libnet = NULL;
+    }
+
+    if (ctx->arp_table != NULL) {
+        ht_destroy(ctx->arp_table);
+        free(ctx->arp_table);
+        ctx->arp_table = NULL;
     }
 }

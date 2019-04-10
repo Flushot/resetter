@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <libnet.h>
 
+#include "hash_table.h"
+
 /**
  * Data structure with all handles
  * (so that cleanup can be simplified).
@@ -21,7 +23,8 @@ typedef struct _resetter_context_t {
 
     pcap_t *pcap; // pcap handle
     char filter_string[1000];
-    int arp_poisoning;
+    int arp_poisoning; // Is ARP poisoning mode enabled?
+    hash_table *arp_table; // Real IP -> MAC address table (gets restored when ARP spoofing stops)
 
     libnet_t *libnet; // libnet handle
     u_long libnet_last_stats_at; // last time libnet stats were reported

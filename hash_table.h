@@ -37,4 +37,6 @@ int ht_destroy(hash_table *);
 
 void ht_dump(hash_table *);
 
+int ht_keys(hash_table *, void **);
+
 #endif

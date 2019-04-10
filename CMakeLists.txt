@@ -12,6 +12,7 @@ set(SOURCES
         hash_table.c
         thread_mgr.c
         listener.c
+        resetter.c
         arp_mitm.c
         asmtest.asm)
 
