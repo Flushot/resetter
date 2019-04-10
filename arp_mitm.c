@@ -81,14 +81,6 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     return 0;
 }
 
-static void unpoison(resetter_context_t *ctx) {
-    printf("Removing ARP poison...\n");
-    ctx->arp_poisoning = 0;
-
-    // TODO: remove arp poison by restoring ctx->arp_table
-    ht_dump(ctx->arp_table);
-}
-
 static char *ether_ntoa(uint8_t *ether_addr) {
     static char addr_buf[18];
     addr_buf[17] = 0;
@@ -103,6 +95,43 @@ static char *ether_ntoa(uint8_t *ether_addr) {
              ether_addr[5]);
 
     return addr_buf;
+}
+
+static void unpoison(resetter_context_t *ctx) {
+    printf("Removing ARP poison...\n");
+    ctx->arp_poisoning = 0;
+
+    int i;
+    list *list;
+    list_node *iter;
+    hash_table_entry *entry;
+    struct sockaddr_in addr;
+
+    for (i = 0; i < ctx->arp_table->size; ++i) {
+        list = ctx->arp_table->index[i];
+        if (list != NULL) {
+            printf("%d: ", i);
+            printf("[ ");
+
+            iter = list->head;
+            if (iter != NULL) {
+                do {
+                    entry = iter->value;
+                    memset(&addr, 0, sizeof(struct sockaddr_in));
+                    addr.sin_addr.s_addr = *((uint32_t *)entry->key);
+
+                    printf("\"%s\" => \"%s\", ",
+                            inet_ntoa(addr.sin_addr),
+                            ether_ntoa((uint8_t *)entry->value));
+                    iter = iter->next;
+                } while (iter != NULL);
+            }
+
+            printf("]\n");
+        }
+    }
+
+    // TODO: remove arp poison by restoring ctx->arp_table
 }
 
 static void on_arp_packet_captured(
@@ -154,6 +183,8 @@ static void on_arp_packet_captured(
             printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
             printf("%s who-has %s ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
             printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), ether_ntoa(arp_payload->ar_sha));
+
+            // TODO: if IP is in ctx->arp_table, send spoofed reply saying it's from this machine's MAC
             break;
 
         case ARPOP_REPLY:
@@ -161,7 +192,22 @@ static void on_arp_packet_captured(
             printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
             printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(saddr.sin_addr));
             printf("%s\n", ether_ntoa(arp_payload->ar_sha));
-            ht_set(ctx->arp_table, inet_ntoa(saddr.sin_addr), ether_ntoa(eth_hdr->ether_dhost));
+
+            if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
+                hash_table_entry *entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),
+                                                        eth_hdr->ether_dhost, sizeof(uint8_t));
+                if (entry == NULL) {
+                    return;
+                }
+
+                if (ht_set_entry(ctx->arp_table, entry) != 0) {
+                    fprintf(stderr, "Error updating ARP table for %s", inet_ntoa(saddr.sin_addr));
+                    ht_destroy_entry(entry);
+                    return;
+                }
+
+                // TODO: once both ends of mitm attack are in ctx->arp_table, periodically send spoofed ARP replies
+            }
             break;
     }
 }

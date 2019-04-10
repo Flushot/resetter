@@ -12,6 +12,7 @@
 typedef struct _hash_table_entry {
     void *key;
     void *value;
+    uint8_t must_destroy;
 } hash_table_entry;
 
 typedef int (*key_cmp_func)(void *, void *);
@@ -27,7 +28,13 @@ typedef struct _hash_table {
 
 int ht_init(hash_table *, uint32_t, key_cmp_func, key_hash_func);
 
+hash_table_entry *ht_init_entry(void *, size_t, void *, size_t);
+
+int ht_destroy_entry(hash_table_entry *);
+
 int ht_set(hash_table *, void *, void *);
+
+int ht_set_entry(hash_table *, hash_table_entry *);
 
 void *ht_get(hash_table *, void *);
 

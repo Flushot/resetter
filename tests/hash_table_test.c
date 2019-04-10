@@ -5,6 +5,7 @@ CU_TestInfo *get_hash_table_tests() {
     static CU_TestInfo tests[] = {
         { "test_hash_table_init_and_destroy", test_hash_table_init_and_destroy },
         { "test_hash_table_get_and_set", test_hash_table_get_and_set },
+        { "test_hash_table_set_entry", test_hash_table_set_entry },
         { "test_hash_table_del", test_hash_table_del },
         { "test_hash_table_keys", test_hash_table_keys },
         { "test_hash_table_has_no_duplicates", test_hash_table_has_no_duplicates },
@@ -54,6 +55,26 @@ void test_hash_table_get_and_set() {
     CU_ASSERT_EQUAL(ht_get(&ht, "spangle"), "fez");
 
     ht_destroy(&ht);
+}
+
+void test_hash_table_set_entry() {
+    int key = 3;
+    int value = 6;
+    int ret;
+
+    hash_table_entry *entry = ht_init_entry(&key, sizeof(int), &value, sizeof(int));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(entry);
+    CU_ASSERT_EQUAL(*((int *)entry->key), key);
+    CU_ASSERT_EQUAL(*((int *)entry->value), value);
+
+    hash_table ht;
+    ht_init(&ht, 50, NULL, NULL);
+
+    ret = ht_set_entry(&ht, entry);
+    CU_ASSERT_EQUAL(ret, 0);
+
+    ret = ht_destroy(&ht);
+    CU_ASSERT_EQUAL(ret, 0);
 }
 
 void test_hash_table_del() {

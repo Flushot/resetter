@@ -45,18 +45,48 @@ int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func k
     return 0;
 }
 
-int ht_set(hash_table *ht, void *key, void *value) {
-    int index;
-    list *list;
-    list_node *curr;
-    hash_table_entry *entry, *curr_entry;
-
-    if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
-        return -1;
+hash_table_entry *ht_init_entry(
+        void *key, size_t key_size,
+        void *value, size_t value_size) {
+    hash_table_entry *entry = malloc(sizeof(hash_table_entry));
+    if (entry == NULL) {
+        perror("malloc() failed");
+        return NULL;
     }
 
-    entry = (hash_table_entry *)malloc(sizeof(hash_table_entry));
+    entry->must_destroy = 1;
+
+    entry->key = malloc(key_size);
+    if (entry->key == NULL) {
+        perror("malloc() failed");
+        free(entry);
+        return NULL;
+    }
+
+    entry->value = malloc(value_size);
+    if (entry->value == NULL) {
+        perror("malloc() failed");
+        free(entry->key);
+        free(entry);
+        return NULL;
+    }
+
+    memcpy(entry->key, key, key_size);
+    memcpy(entry->value, value, value_size);
+
+    return entry;
+}
+
+int ht_destroy_entry(hash_table_entry *entry) {
+    free(entry->key);
+    free(entry->value);
+    free(entry);
+
+    return 0;
+}
+
+int ht_set(hash_table *ht, void *key, void *value) {
+    hash_table_entry *entry = malloc(sizeof(hash_table_entry));
     if (entry == NULL) {
         perror("malloc() failed");
         return -1;
@@ -66,7 +96,21 @@ int ht_set(hash_table *ht, void *key, void *value) {
     entry->key = key;
     entry->value = value;
 
-    index = find_index(ht, key);
+    return ht_set_entry(ht, entry);
+}
+
+int ht_set_entry(hash_table *ht, hash_table_entry *entry) {
+    int index;
+    list *list;
+    list_node *curr;
+    hash_table_entry *curr_entry;
+
+    if (ht->index == NULL) {
+        fprintf(stderr, "hash table not initialized");
+        return -1;
+    }
+
+    index = find_index(ht, entry->key);
     list = *(ht->index + index);
     if (list == NULL) {
         // First entry: Start a new linked list
@@ -78,9 +122,9 @@ int ht_set(hash_table *ht, void *key, void *value) {
         curr = list->head;
         do {
             curr_entry = curr->value;
-            if ((*ht->key_cmp)(curr_entry->key, key) == 0) {
+            if ((*ht->key_cmp)(curr_entry->key, entry->key) == 0) {
                 // Update existing value
-                curr_entry->value = value;
+                curr_entry->value = entry->value;
                 free(entry);
                 return 0;
             }
@@ -175,7 +219,11 @@ int ht_destroy(hash_table *ht) {
                 if (curr != NULL) {
                     do {
                         entry = curr->value;
-                        free(entry);
+                        if (entry->must_destroy) {
+                            ht_destroy_entry(entry);
+                        } else {
+                            free(entry);
+                        }
                         curr = curr->next;
                     } while (curr != NULL);
                 }
@@ -193,6 +241,7 @@ void ht_dump(hash_table *ht) {
     int i;
     list *list;
     list_node *iter;
+    hash_table_entry *entry;
 
     if (ht->index == NULL) {
         fprintf(stderr, "hash table not initialized");
@@ -208,7 +257,7 @@ void ht_dump(hash_table *ht) {
             iter = list->head;
             if (iter != NULL) {
                 do {
-                    hash_table_entry *entry = iter->value;
+                    entry = iter->value;
                     printf("\"%s\" => \"%s\", ", entry->key, entry->value);
                     iter = iter->next;
                 } while (iter != NULL);
