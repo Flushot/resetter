@@ -52,6 +52,14 @@ static void *arp_mitm_thread(void *vargp) {
     return NULL;
 }
 
+static int arp_table_key_cmp(void *key_a, void *key_b) {
+    return *((uint32_t *)key_a) == *(uint32_t *)key_b;
+}
+
+static uint32_t arp_table_key_hash(void *key, size_t ht_size) {
+    return *((uint32_t *)key) % (ht_size - 1);
+}
+
 int start_arp_mitm_thread(thread_node *thread, char *device) {
     resetter_context_t *ctx = &thread->ctx;
     memset(ctx, 0, sizeof(resetter_context_t));
@@ -63,7 +71,7 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
 
     // Init ARP table
     ctx->arp_table = malloc(sizeof(hash_table));
-    if (ht_init(ctx->arp_table, 100, NULL, NULL) != 0) {
+    if (ht_init(ctx->arp_table, 100, arp_table_key_cmp, arp_table_key_hash) != 0) {
         return -1;
     }
 

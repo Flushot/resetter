@@ -15,10 +15,9 @@ static int default_key_cmp(void *key_a, void *key_b) {
 static uint32_t default_key_hash(void *key, size_t ht_size) {
     int i;
     uint32_t hash = 0;
-    char *str_key = (char *)key;
 
-    for (i = 0; i < strlen(str_key); ++i) {
-        hash += (uint8_t)str_key[i] % (ht_size - 1);
+    for (i = 0; i < strlen(key); ++i) {
+        hash += (uint8_t)((char *)key)[i] % (ht_size - 1);
     }
 
     return hash;
