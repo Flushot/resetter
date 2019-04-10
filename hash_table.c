@@ -106,7 +106,7 @@ int ht_set_entry(hash_table *ht, hash_table_entry *entry) {
     hash_table_entry *curr_entry;
 
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
+        fprintf(stderr, "hash table not initialized\n");
         return -1;
     }
 
@@ -144,7 +144,7 @@ void *ht_get(hash_table *ht, void *key) {
     hash_table_entry *entry;
 
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
+        fprintf(stderr, "hash table not initialized\n");
         return NULL;
     }
 
@@ -176,7 +176,7 @@ int ht_del(hash_table *ht, void *key) {
     hash_table_entry *entry;
 
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
+        fprintf(stderr, "hash table not initialized\n");
         return -1;
     }
 
@@ -205,67 +205,58 @@ int ht_del(hash_table *ht, void *key) {
     return found ? 0 : -1;
 }
 
-int ht_destroy(hash_table *ht) {
-    int i;
-    list *list;
-    list_node *curr;
-    hash_table_entry *entry;
-
-    if (ht->index != NULL) {
-        for (i = 0; i < ht->size; ++i) {
-            list = ht->index[i];
-            if (list != NULL) {
-                curr = list->head;
-                if (curr != NULL) {
-                    do {
-                        entry = curr->value;
-                        if (entry->must_destroy) {
-                            ht_destroy_entry(entry);
-                        } else {
-                            free(entry);
-                        }
-                        curr = curr->next;
-                    } while (curr != NULL);
-                }
-            }
-        }
-
-        free(ht->index);
-        ht->index = NULL;
+static void ht_destroy_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+    if (entry->must_destroy) {
+        ht_destroy_entry(entry);
+    } else {
+        free(entry);
     }
+}
+
+int ht_destroy(hash_table *ht) {
+    if (ht->index == NULL) {
+        return -1;
+    }
+
+    ht_iter(ht, ht_destroy_iter_func, NULL);
+    free(ht->index);
+    ht->index = NULL;
 
     return 0;
 }
 
-void ht_dump(hash_table *ht) {
+void ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
     int i;
     list *list;
     list_node *iter;
     hash_table_entry *entry;
 
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
+        fprintf(stderr, "hash table not initialized\n");
         return;
     }
 
     for (i = 0; i < ht->size; ++i) {
         list = ht->index[i];
         if (list != NULL) {
-            printf("%d: ", i);
-            printf("[ ");
-
             iter = list->head;
             if (iter != NULL) {
                 do {
                     entry = iter->value;
-                    printf("\"%s\" => \"%s\", ", entry->key, entry->value);
                     iter = iter->next;
+                    iter_func(entry, i, iter_func_user_arg);
                 } while (iter != NULL);
             }
-
-            printf("]\n");
         }
     }
+}
+
+static void ht_dump_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+    printf("%d: { \"%s\" => \"%s\" }\n", index, entry->key, entry->value);
+}
+
+void ht_dump(hash_table *ht) {
+    ht_iter(ht, ht_dump_iter_func, NULL);
 }
 
 int ht_keys(hash_table *ht, void **keys) {
@@ -274,7 +265,7 @@ int ht_keys(hash_table *ht, void **keys) {
     list_node *iter;
 
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized");
+        fprintf(stderr, "hash table not initialized\n");
         return -1;
     }
 

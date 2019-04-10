@@ -196,31 +196,34 @@ int list_del_at(list *lst, int pos) {
     return 0;
 }
 
-void list_dump(list *lst) {
-    list_node *iter = lst->head;
-
-    printf("[ ");
-
+void list_iter(list *lst, list_iter_func iter_func, void *iter_func_user_arg) {
+    list_node *curr, *iter = lst->head;
     if (iter != NULL) {
+        int i = 0;
         do {
-            printf("\"%s\", ", iter->value);
+            curr = iter;
             iter = iter->next;
+            iter_func(curr, i++, iter_func_user_arg);
         } while (iter != NULL);
     }
+}
 
-    printf("]\n");
+static void list_dump_iter_func(list_node *item, int index, void *user_arg) {
+    printf("\"%s\", ", item->value);
+}
+
+void list_dump(list *lst) {
+    printf("[ ");
+    list_iter(lst, list_dump_iter_func, NULL);
+    printf(" ]\n");
+}
+
+static void list_destroy_iter_func(list_node *item, int index, void *user_arg) {
+    free(item);
 }
 
 int list_destroy(list *lst) {
-    list_node *item, *iter = lst->head;
-
-    if (iter != NULL) {
-        while (iter->next != NULL) {
-            item = iter;
-            iter = iter->next;
-            free(item);
-        }
-    }
+    list_iter(lst, list_destroy_iter_func, NULL);
 
     lst->size = 0;
     lst->head = NULL;

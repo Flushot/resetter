@@ -5,6 +5,7 @@ CU_TestInfo *get_list_tests() {
     static CU_TestInfo tests[] = {
         { "test_list_init_and_destroy", test_list_init_and_destroy },
         { "test_list", test_list },
+        { "test_list_iter", test_list_iter },
         CU_TEST_INFO_NULL,
     };
 
@@ -16,17 +17,17 @@ void test_list_init_and_destroy() {
     list lst;
 
     ret = list_init(&lst);
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 0);
-    CU_ASSERT(lst.head == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 0);
+    CU_ASSERT_PTR_NULL(lst.head);
 
     list_push(&lst, "foo");
     list_push(&lst, "bar");
 
     ret = list_destroy(&lst);
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 0);
-    CU_ASSERT(lst.head == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 0);
+    CU_ASSERT_PTR_NULL(lst.head);
 }
 
 void test_list() {
@@ -36,37 +37,57 @@ void test_list() {
     list_init(&lst);
 
     ret = list_push(&lst, "foo");
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 1);
-    CU_ASSERT(lst.head->value == "foo");
-    CU_ASSERT(lst.head->next == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 1);
+    CU_ASSERT_STRING_EQUAL(lst.head->value, "foo");
+    CU_ASSERT_PTR_NULL(lst.head->next);
 
     ret = list_push(&lst, "bar");
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 2);
-    CU_ASSERT(lst.head->value == "foo");
-    CU_ASSERT(lst.head->next->value == "bar");
-    CU_ASSERT(lst.head->next->next == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 2);
+    CU_ASSERT_STRING_EQUAL(lst.head->value, "foo");
+    CU_ASSERT_STRING_EQUAL(lst.head->next->value, "bar");
+    CU_ASSERT_PTR_NULL(lst.head->next->next);
 
     ret = list_shift(&lst, "spangle");
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 3);
-    CU_ASSERT(lst.head->value == "spangle");
-    CU_ASSERT(lst.head->next->value == "foo");
-    CU_ASSERT(lst.head->next->next->value == "bar");
-    CU_ASSERT(lst.head->next->next->next == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 3);
+    CU_ASSERT_STRING_EQUAL(lst.head->value, "spangle");
+    CU_ASSERT_STRING_EQUAL(lst.head->next->value, "foo");
+    CU_ASSERT_STRING_EQUAL(lst.head->next->next->value, "bar");
+    CU_ASSERT_PTR_NULL(lst.head->next->next->next);
 
     ret = list_del_at(&lst, 0);
-    CU_ASSERT(ret == 0);
-    CU_ASSERT(lst.size == 2);
-    CU_ASSERT(lst.head->value == "foo");
-    CU_ASSERT(lst.head->next->value == "bar");
-    CU_ASSERT(lst.head->next->next == NULL);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(lst.size, 2);
+    CU_ASSERT_STRING_EQUAL(lst.head->value, "foo");
+    CU_ASSERT_STRING_EQUAL(lst.head->next->value, "bar");
+    CU_ASSERT_PTR_NULL(lst.head->next->next);
 
     list_pop(&lst);
-    CU_ASSERT(lst.size == 1);
-    CU_ASSERT(lst.head->value == "foo");
-    CU_ASSERT(lst.head->next == NULL);
+    CU_ASSERT_EQUAL(lst.size, 1);
+    CU_ASSERT_STRING_EQUAL(lst.head->value, "foo");
+    CU_ASSERT_PTR_NULL(lst.head->next);
+
+    list_destroy(&lst);
+}
+
+static void test_list_iter_func(list_node *item, int index, void *result) {
+    strcat(result, item->value);
+}
+
+void test_list_iter() {
+    list lst;
+    char result[500];
+    memset(result, 0, sizeof(result));
+
+    list_init(&lst);
+    list_push(&lst, "foo");
+    list_push(&lst, "bar");
+    list_push(&lst, "spangle");
+
+    list_iter(&lst, test_list_iter_func, result);
+    CU_ASSERT_STRING_EQUAL(result, "foobarspangle");
 
     list_destroy(&lst);
 }

@@ -42,6 +42,10 @@ int ht_del(hash_table *, void *);
 
 int ht_destroy(hash_table *);
 
+typedef void (*ht_iter_func)(hash_table_entry *, int, void *);
+
+void ht_iter(hash_table *, ht_iter_func, void *);
+
 void ht_dump(hash_table *);
 
 int ht_keys(hash_table *, void **);

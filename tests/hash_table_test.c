@@ -9,6 +9,7 @@ CU_TestInfo *get_hash_table_tests() {
         { "test_hash_table_del", test_hash_table_del },
         { "test_hash_table_keys", test_hash_table_keys },
         { "test_hash_table_has_no_duplicates", test_hash_table_has_no_duplicates },
+        { "test_hash_table_iter", test_hash_table_iter },
         CU_TEST_INFO_NULL,
     };
 
@@ -134,6 +135,27 @@ void test_hash_table_has_no_duplicates() {
     CU_ASSERT_EQUAL(ret, 1); // One only key
 
     CU_ASSERT_EQUAL(ht_get(&ht, "a"), "two"); // Last value set
+
+    ht_destroy(&ht);
+}
+
+static void test_hash_table_iter_func(hash_table_entry *entry, int index, void *result) {
+    strcat(result, entry->key);
+    strcat(result, entry->value);
+}
+
+void test_hash_table_iter() {
+    hash_table ht;
+    char result[500];
+    memset(result, 0, sizeof(result));
+
+    ht_init(&ht, 50, NULL, NULL);
+
+    ht_set(&ht, "foo", "one");
+    ht_set(&ht, "bar", "two");
+
+    ht_iter(&ht, test_hash_table_iter_func, result);
+    CU_ASSERT_STRING_EQUAL(result, "bartwofooone");
 
     ht_destroy(&ht);
 }

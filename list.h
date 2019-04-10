@@ -32,6 +32,10 @@ void *list_pop(list *);
 
 int list_del_at(list *, int pos);
 
+typedef void (*list_iter_func)(list_node *, int, void *);
+
+void list_iter(list *, list_iter_func, void *);
+
 void list_dump(list *);
 
 int list_destroy(list *);

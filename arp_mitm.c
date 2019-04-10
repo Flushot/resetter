@@ -97,39 +97,24 @@ static char *ether_ntoa(uint8_t *ether_addr) {
     return addr_buf;
 }
 
+static void print_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
+    struct sockaddr_in addr;
+
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    addr.sin_addr.s_addr = *((uint32_t *)entry->key);
+
+    printf("%s: %s\n",
+           inet_ntoa(addr.sin_addr),
+           ether_ntoa((uint8_t *)entry->value));
+}
+
 static void unpoison(resetter_context_t *ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
-    int i;
-    list *list;
-    list_node *iter;
-    hash_table_entry *entry;
-    struct sockaddr_in addr;
-
-    for (i = 0; i < ctx->arp_table->size; ++i) {
-        list = ctx->arp_table->index[i];
-        if (list != NULL) {
-            printf("%d: ", i);
-            printf("[ ");
-
-            iter = list->head;
-            if (iter != NULL) {
-                do {
-                    entry = iter->value;
-                    memset(&addr, 0, sizeof(struct sockaddr_in));
-                    addr.sin_addr.s_addr = *((uint32_t *)entry->key);
-
-                    printf("\"%s\" => \"%s\", ",
-                            inet_ntoa(addr.sin_addr),
-                            ether_ntoa((uint8_t *)entry->value));
-                    iter = iter->next;
-                } while (iter != NULL);
-            }
-
-            printf("]\n");
-        }
-    }
+    printf("--- Begin ARP Table ---\n");
+    ht_iter(ctx->arp_table, print_arp_table_entry, NULL);
+    printf("--- End ARP Table ---\n");
 
     // TODO: remove arp poison by restoring ctx->arp_table
 }
