@@ -62,7 +62,8 @@ int main(int argc, char **argv) {
     char **argv_remaining = &argv[optind];
     target_ip = argv_remaining[0];
 
-    signal(SIGINT, on_signal_trapped); // Trap ^C
+    signal(SIGINT, on_signal_trapped); // ^C
+    signal(SIGTERM, on_signal_trapped);
 
     // Detect interface if null
     if (device == NULL) {
@@ -109,7 +110,6 @@ static char *detect_device() {
 }
 
 static void on_signal_trapped(int signum) {
-    if (signum == SIGINT) {
-        thmgr_cleanup();
-    }
+    printf("\nTrapped signal %d\n", signum);
+    thmgr_cleanup();
 }
