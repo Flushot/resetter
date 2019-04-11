@@ -24,7 +24,7 @@ typedef struct _resetter_context_t {
     pcap_t *pcap; // pcap handle
     char filter_string[1000];
     int arp_poisoning; // Is ARP poisoning mode enabled?
-    hash_table *arp_table; // Real IP -> MAC address table (gets restored when ARP spoofing stops)
+    hash_table *arp_table; // Poisoned ARP table: IP -> original MAC address
 
     libnet_t *libnet; // libnet handle
     u_long libnet_last_stats_at; // last time libnet stats were reported

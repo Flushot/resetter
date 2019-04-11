@@ -85,7 +85,7 @@ int send_reset_packet(
             ctx->libnet,
             tcp_tag);
     if (tcp_tag == -1) {
-        fprintf(stderr, "Error building TCP header: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building RST packet TCP header: %s\n", libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -108,7 +108,7 @@ int send_reset_packet(
             ctx->libnet,
             ip_tag);
     if (ip_tag == -1) {
-        fprintf(stderr, "Error building IP header: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building RST packet IP header: %s\n", libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -118,7 +118,7 @@ int send_reset_packet(
     // Write packet
     int bytes_written = libnet_write(ctx->libnet);
     if (bytes_written == -1) {
-        fprintf(stderr, "Error writing packet: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error writing RST packet: %s\n", libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -135,8 +135,8 @@ int send_reset_packet(
     } else if (curr_time - ctx->libnet_last_stats_at > 10) {
         struct libnet_stats stat;
         libnet_stats(ctx->libnet, &stat);
-        printf("Packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
-               "Packet errors: %" PRId64 "\n",
+        printf("RST packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
+               "RST packet errors: %" PRId64 "\n",
                stat.packets_sent,
                stat.bytes_written,
                stat.packet_errors);
@@ -152,7 +152,6 @@ static void *resetter_thread(void *vargp) {
 
     if (listener_start(ctx, on_synack_packet_captured) != 0) {
         listener_stop(ctx);
-        // return EXIT_FAILURE;
         return NULL;
     }
 

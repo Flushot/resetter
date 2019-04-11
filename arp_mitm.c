@@ -13,6 +13,8 @@ typedef struct _arp_payload_t {
     u_char ar_tpa[IP_ADDR_LEN];    // Target IP addr
 } arp_payload_t;
 
+static int send_arp_whohas_packet(resetter_context_t *, struct sockaddr_in);
+
 static void on_arp_packet_captured(
         resetter_context_t *,
         const struct pcap_pkthdr *,
@@ -45,7 +47,6 @@ static void *arp_mitm_thread(void *vargp) {
 
     if (listener_start(ctx, on_arp_packet_captured) != 0) {
         listener_stop(ctx);
-        // return EXIT_FAILURE;
         return NULL;
     }
 
@@ -84,6 +85,21 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     if (pthread_create(&thread->thread_id, NULL, arp_mitm_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");
         return -1;
+    }
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    char *ips[] = {
+            "192.168.1.1",
+            "192.168.1.6",
+            "192.168.1.10",
+            "192.168.2.1",
+            "192.168.2.2",
+    };
+
+    for (int i = 0; i < sizeof(ips) / sizeof(char *); ++i) {
+        addr.sin_addr.s_addr = inet_addr(ips[i]);
+        send_arp_whohas_packet(ctx, addr);
     }
 
     return 0;
@@ -127,10 +143,10 @@ static void unpoison(resetter_context_t *ctx) {
     // TODO: remove arp poison by restoring ctx->arp_table
 }
 
-static void on_arp_packet_captured(
-        resetter_context_t *ctx,
-        const struct pcap_pkthdr *cap_header,
-        const u_char *packet) {
+static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in addr) {
+    static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
+    static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
+
     // Resolve local MAC address
     static struct libnet_ether_addr *local_mac_addr = NULL;
     if (local_mac_addr == NULL) {
@@ -138,13 +154,92 @@ static void on_arp_packet_captured(
         if (local_mac_addr == NULL) {
             fprintf(stderr, "Error getting local MAC address: %s\n",
                     libnet_geterror(ctx->libnet));
-            listener_stop(ctx);
-            return;
+            return -1;
         }
 
         printf("Local MAC address: %s\n", ether_ntoa(local_mac_addr->ether_addr_octet));
     }
 
+    printf("Broadcasting ARP who-has %s\n", inet_ntoa(addr.sin_addr));
+
+    uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
+    uint8_t *ip_src = (uint8_t *)&local_ip;
+    uint8_t *eth_dst = (uint8_t *)"\xFF\xFF\xFF\xFF\xFF\xFF";
+    uint8_t *eth_src = local_mac_addr->ether_addr_octet;
+    uint8_t *ip_dst = (uint8_t *)&addr.sin_addr.s_addr;
+
+    // Build ARP packet
+    arp_tag = libnet_build_arp(
+            ARPHRD_ETHER, // hrd
+            ETHERTYPE_IP, // pro: Protocol (IPv4)
+            ETHER_ADDR_LEN, // hln
+            IP_ADDR_LEN, // pln
+            ARPOP_REQUEST, // op
+            local_mac_addr->ether_addr_octet, // sha: source hardware addr
+            ip_src, // spa: source protocol addr
+            eth_dst, // tha: target hardware addr (broadcast)
+            ip_dst, // tpa: target protocol addr
+            NULL, // payload
+            0, // payload_s
+            ctx->libnet,
+            arp_tag);
+    if (arp_tag == -1) {
+        fprintf(stderr, "Error building ARP packet: %s\n", libnet_geterror(ctx->libnet));
+        libnet_clear_packet(ctx->libnet);
+        arp_tag = LIBNET_PTAG_INITIALIZER;
+        eth_tag = LIBNET_PTAG_INITIALIZER;
+        return -1;
+    }
+
+    // Build ethernet frame
+    eth_tag = libnet_build_ethernet(
+            eth_dst, // dst
+            eth_src, // src
+            ETHERTYPE_ARP, // type
+            NULL, // payload
+            0, // payload_s
+            ctx->libnet,
+            eth_tag);
+    if (eth_tag == -1) {
+        fprintf(stderr, "Error building ARP ethernet frame: %s\n", libnet_geterror(ctx->libnet));
+        libnet_clear_packet(ctx->libnet);
+        arp_tag = LIBNET_PTAG_INITIALIZER;
+        eth_tag = LIBNET_PTAG_INITIALIZER;
+        return -1;
+    }
+
+    // Write packet
+    int bytes_written = libnet_write(ctx->libnet);
+    if (bytes_written == -1) {
+        fprintf(stderr, "Error writing ARP packet: %s\n", libnet_geterror(ctx->libnet));
+        libnet_clear_packet(ctx->libnet);
+        arp_tag = LIBNET_PTAG_INITIALIZER;
+        eth_tag = LIBNET_PTAG_INITIALIZER;
+        return -1;
+    }
+
+    // Occasionally report packet sent/errors stats
+    u_long curr_time = (u_long)time(0);
+    if (ctx->libnet_last_stats_at == 0) {
+        ctx->libnet_last_stats_at = curr_time;
+    } else if (curr_time - ctx->libnet_last_stats_at > 10) {
+        struct libnet_stats stat;
+        libnet_stats(ctx->libnet, &stat);
+        printf("ARP packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
+               "ARP packet errors: %" PRId64 "\n",
+               stat.packets_sent,
+               stat.bytes_written,
+               stat.packet_errors);
+        ctx->libnet_last_stats_at = curr_time;
+    }
+
+    return 0;
+}
+
+static void on_arp_packet_captured(
+        resetter_context_t *ctx,
+        const struct pcap_pkthdr *cap_header,
+        const u_char *packet) {
     struct libnet_ethernet_hdr *eth_hdr = (struct libnet_ethernet_hdr *)packet;
     if (htons(eth_hdr->ether_type) != ETHERTYPE_ARP) {
         // Type must be ARP
@@ -152,7 +247,7 @@ static void on_arp_packet_captured(
     }
 
     struct libnet_arp_hdr *arp_hdr = (struct libnet_arp_hdr *)(packet + LIBNET_ETH_H);
-    if (htons(arp_hdr->ar_hrd) != ARPHRD_ETHER || htons(arp_hdr->ar_pro) != 0x0800) {
+    if (htons(arp_hdr->ar_hrd) != ARPHRD_ETHER || htons(arp_hdr->ar_pro) != ETHERTYPE_IP) {
         // HW address format must be ethernet and ARP proto must be IPv4
         return;
     }
