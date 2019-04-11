@@ -24,7 +24,6 @@ static void cleanup(resetter_context_t *);
 
 static int init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_LINK; // Layer 2 (link)
-
     char errbuf[LIBNET_ERRBUF_SIZE];
 
     ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
@@ -34,7 +33,8 @@ static int init_libnet(resetter_context_t *ctx) {
     }
 
     if (libnet_seed_prand(ctx->libnet) == -1) {
-        fprintf(stderr, "libnet_seed_prand() failed: %s\n",libnet_geterror(ctx->libnet));
+        fprintf(stderr, "libnet_seed_prand() failed: %s\n",
+                libnet_geterror(ctx->libnet));
         return -1;
     }
 
@@ -144,11 +144,21 @@ static void unpoison(resetter_context_t *ctx) {
 }
 
 static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in addr) {
+    uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
+    uint8_t *ip_src = (uint8_t *)&local_ip;
+    uint8_t *ip_dst = (uint8_t *)&addr.sin_addr.s_addr;
+    uint8_t *eth_src;
+    uint8_t *eth_dst = (uint8_t *)"\xFF\xFF\xFF\xFF\xFF\xFF";
+    int bytes_written;
+    u_long curr_time;
+    struct libnet_stats stat;
     static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
+    static struct libnet_ether_addr *local_mac_addr = NULL;
+
+    printf("Broadcasting ARP who-has %s\n", inet_ntoa(addr.sin_addr));
 
     // Resolve local MAC address
-    static struct libnet_ether_addr *local_mac_addr = NULL;
     if (local_mac_addr == NULL) {
         local_mac_addr = libnet_get_hwaddr(ctx->libnet);
         if (local_mac_addr == NULL) {
@@ -157,16 +167,11 @@ static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in ad
             return -1;
         }
 
-        printf("Local MAC address: %s\n", ether_ntoa(local_mac_addr->ether_addr_octet));
+        printf("Local MAC address: %s\n",
+                ether_ntoa(local_mac_addr->ether_addr_octet));
     }
 
-    printf("Broadcasting ARP who-has %s\n", inet_ntoa(addr.sin_addr));
-
-    uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
-    uint8_t *ip_src = (uint8_t *)&local_ip;
-    uint8_t *eth_dst = (uint8_t *)"\xFF\xFF\xFF\xFF\xFF\xFF";
-    uint8_t *eth_src = local_mac_addr->ether_addr_octet;
-    uint8_t *ip_dst = (uint8_t *)&addr.sin_addr.s_addr;
+    eth_src = local_mac_addr->ether_addr_octet;
 
     // Build ARP packet
     arp_tag = libnet_build_arp(
@@ -184,7 +189,8 @@ static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in ad
             ctx->libnet,
             arp_tag);
     if (arp_tag == -1) {
-        fprintf(stderr, "Error building ARP packet: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building ARP packet: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         arp_tag = LIBNET_PTAG_INITIALIZER;
         eth_tag = LIBNET_PTAG_INITIALIZER;
@@ -201,7 +207,8 @@ static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in ad
             ctx->libnet,
             eth_tag);
     if (eth_tag == -1) {
-        fprintf(stderr, "Error building ARP ethernet frame: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building ARP ethernet frame: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         arp_tag = LIBNET_PTAG_INITIALIZER;
         eth_tag = LIBNET_PTAG_INITIALIZER;
@@ -209,9 +216,10 @@ static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in ad
     }
 
     // Write packet
-    int bytes_written = libnet_write(ctx->libnet);
+    bytes_written = libnet_write(ctx->libnet);
     if (bytes_written == -1) {
-        fprintf(stderr, "Error writing ARP packet: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error writing ARP packet: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         arp_tag = LIBNET_PTAG_INITIALIZER;
         eth_tag = LIBNET_PTAG_INITIALIZER;
@@ -219,11 +227,10 @@ static int send_arp_whohas_packet(resetter_context_t *ctx, struct sockaddr_in ad
     }
 
     // Occasionally report packet sent/errors stats
-    u_long curr_time = (u_long)time(0);
+    curr_time = (u_long)time(0);
     if (ctx->libnet_last_stats_at == 0) {
         ctx->libnet_last_stats_at = curr_time;
     } else if (curr_time - ctx->libnet_last_stats_at > 10) {
-        struct libnet_stats stat;
         libnet_stats(ctx->libnet, &stat);
         printf("ARP packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
                "ARP packet errors: %" PRId64 "\n",
@@ -240,13 +247,18 @@ static void on_arp_packet_captured(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
         const u_char *packet) {
-    struct libnet_ethernet_hdr *eth_hdr = (struct libnet_ethernet_hdr *)packet;
+    struct sockaddr_in saddr, daddr;
+    struct libnet_ethernet_hdr *eth_hdr;
+    struct libnet_arp_hdr *arp_hdr;
+    hash_table_entry *entry;
+
+    eth_hdr = (struct libnet_ethernet_hdr *)packet;
     if (htons(eth_hdr->ether_type) != ETHERTYPE_ARP) {
         // Type must be ARP
         return;
     }
 
-    struct libnet_arp_hdr *arp_hdr = (struct libnet_arp_hdr *)(packet + LIBNET_ETH_H);
+    arp_hdr = (struct libnet_arp_hdr *)(packet + LIBNET_ETH_H);
     if (htons(arp_hdr->ar_hrd) != ARPHRD_ETHER || htons(arp_hdr->ar_pro) != ETHERTYPE_IP) {
         // HW address format must be ethernet and ARP proto must be IPv4
         return;
@@ -254,7 +266,6 @@ static void on_arp_packet_captured(
 
     arp_payload_t *arp_payload = (arp_payload_t *)(packet + LIBNET_ETH_H + LIBNET_ARP_H);
 
-    struct sockaddr_in saddr, daddr;
     memset(&saddr, 0, sizeof(struct sockaddr_in));
     memset(&daddr, 0, sizeof(struct sockaddr_in));
     saddr.sin_addr.s_addr = *((uint32_t *)&(arp_payload->ar_spa));
@@ -278,18 +289,21 @@ static void on_arp_packet_captured(
         case ARPOP_REPLY:
             // resp to previous request
             printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
-            printf("%s reply %s is-at ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(saddr.sin_addr));
+            printf("%s reply %s is-at ",
+                    ether_ntoa(eth_hdr->ether_dhost),
+                    inet_ntoa(saddr.sin_addr));
             printf("%s\n", ether_ntoa(arp_payload->ar_sha));
 
             if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
-                hash_table_entry *entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),
-                                                        arp_payload->ar_sha, sizeof(arp_payload->ar_sha));
+                entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),
+                                      arp_payload->ar_sha, sizeof(arp_payload->ar_sha));
                 if (entry == NULL) {
                     return;
                 }
 
                 if (ht_set_entry(ctx->arp_table, entry) != 0) {
-                    fprintf(stderr, "Error updating ARP table for %s", inet_ntoa(saddr.sin_addr));
+                    fprintf(stderr, "Error updating ARP table for %s",
+                            inet_ntoa(saddr.sin_addr));
                     ht_destroy_entry(entry);
                     return;
                 }

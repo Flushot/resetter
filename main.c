@@ -21,13 +21,14 @@ void usage(char **argv) {
 }
 
 int main(int argc, char **argv) {
-    printf("resetter (c)2019 Chris Lyon\n\n");
-
     int flag;
     char *target_ip = NULL;
     uint16_t target_port = 0;
     int arp_mitm = 0;
     char *device = NULL;
+    char **argv_remaining;
+
+    printf("resetter (c)2019 Chris Lyon\n\n");
 
     while ((flag = getopt(argc, argv, "ahi:p:")) != -1) {
         switch (flag) {
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
     }
 
     // Remaining positional args
-    char **argv_remaining = &argv[optind];
+    argv_remaining = &argv[optind];
     target_ip = argv_remaining[0];
 
     signal(SIGINT, on_signal_trapped); // ^C
@@ -99,8 +100,8 @@ int main(int argc, char **argv) {
 
 static char *detect_device() {
     char errbuf[PCAP_ERRBUF_SIZE];
-
     char *device = pcap_lookupdev(errbuf);
+
     if (device == NULL) {
         fprintf(stderr, "pcap_lookupdev() failed: %s\n", errbuf);
         return NULL;

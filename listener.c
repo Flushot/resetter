@@ -17,7 +17,6 @@ static int listener_init(resetter_context_t *ctx) {
     const int snapshot_length = 2048;
     const int promiscuous = 1; // Promiscuous mode
     const int timeout = 1; // Packet buffer timeout https://www.tcpdump.org/manpages/pcap.3pcap.html
-
     char errbuf[PCAP_ERRBUF_SIZE];
 
     if (ctx->device == NULL) {
@@ -35,8 +34,9 @@ static int listener_init(resetter_context_t *ctx) {
 }
 
 static int set_pcap_filter(resetter_context_t *ctx) {
-    // Compile BPF filter
     struct bpf_program filter;
+
+    // Compile BPF filter
     if (pcap_compile(ctx->pcap, &filter, ctx->filter_string, 0, PCAP_NETMASK_UNKNOWN) == PCAP_ERROR) {
         pcap_perror(ctx->pcap, "pcap_compile() failed");
         return -1;
@@ -56,6 +56,8 @@ int is_listener_started(resetter_context_t *ctx) {
 }
 
 int listener_start(resetter_context_t *ctx, listener_callback callback) {
+    packet_capture_args args;
+
     if (listener_init(ctx) != 0) {
         return -1;
     }
@@ -64,7 +66,6 @@ int listener_start(resetter_context_t *ctx, listener_callback callback) {
         return -1;
     }
 
-    packet_capture_args args;
     args.ctx = ctx;
     args.callback = callback;
 

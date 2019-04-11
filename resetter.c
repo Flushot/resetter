@@ -10,7 +10,6 @@ static void cleanup(resetter_context_t *);
 
 static int init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_RAW4; // Layer 3 (network)
-
     char errbuf[LIBNET_ERRBUF_SIZE];
 
     ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
@@ -28,15 +27,17 @@ static int init_libnet(resetter_context_t *ctx) {
 }
 
 static int update_pcap_filter(resetter_context_t *ctx) {
+    char *filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
     char *filter_suffix = ctx->filter_string;
+    char *filter_string;
+
     if (filter_suffix != NULL && strlen(filter_suffix) == 0) {
         // Default filter: All TCP traffic
         filter_suffix = "tcp";
     }
 
     // Always prepend with this condition to just include SYN-ACK packets
-    char *filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
-    char *filter_string = (char *)malloc(sizeof(char) * strlen(filter_prefix) + strlen(filter_suffix) + 1);
+    filter_string = (char *)malloc(sizeof(char) * strlen(filter_prefix) + strlen(filter_suffix) + 1);
     if (filter_string == NULL) {
         perror("malloc() failed");
         return -1;
@@ -57,11 +58,14 @@ int send_reset_packet(
         struct sockaddr_in saddr, uint16_t sport,
         struct sockaddr_in daddr, uint16_t dport,
         uint32_t ack) {
+    char saddr_str[16], daddr_str[16];
+    int bytes_written;
+    u_long curr_time;
+    struct libnet_stats stat;
     static libnet_ptag_t tcp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t ip_tag = LIBNET_PTAG_INITIALIZER;
 
     // inet_ntoa stores results in a static buffer that gets overwritten with every call
-    char saddr_str[16], daddr_str[16];
     strncpy(saddr_str, inet_ntoa(saddr.sin_addr), sizeof(saddr_str));
     strncpy(daddr_str, inet_ntoa(daddr.sin_addr), sizeof(daddr_str));
 
@@ -85,7 +89,8 @@ int send_reset_packet(
             ctx->libnet,
             tcp_tag);
     if (tcp_tag == -1) {
-        fprintf(stderr, "Error building RST packet TCP header: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building RST packet TCP header: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -108,7 +113,8 @@ int send_reset_packet(
             ctx->libnet,
             ip_tag);
     if (ip_tag == -1) {
-        fprintf(stderr, "Error building RST packet IP header: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error building RST packet IP header: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -116,9 +122,10 @@ int send_reset_packet(
     }
 
     // Write packet
-    int bytes_written = libnet_write(ctx->libnet);
+    bytes_written = libnet_write(ctx->libnet);
     if (bytes_written == -1) {
-        fprintf(stderr, "Error writing RST packet: %s\n", libnet_geterror(ctx->libnet));
+        fprintf(stderr, "Error writing RST packet: %s\n",
+                libnet_geterror(ctx->libnet));
         libnet_clear_packet(ctx->libnet);
         tcp_tag = LIBNET_PTAG_INITIALIZER;
         ip_tag = LIBNET_PTAG_INITIALIZER;
@@ -129,11 +136,10 @@ int send_reset_packet(
     // libnet_clear_packet(ctx.libnet);
 
     // Occasionally report packet sent/errors stats
-    u_long curr_time = (u_long)time(0);
+    curr_time = (u_long)time(0);
     if (ctx->libnet_last_stats_at == 0) {
         ctx->libnet_last_stats_at = curr_time;
     } else if (curr_time - ctx->libnet_last_stats_at > 10) {
-        struct libnet_stats stat;
         libnet_stats(ctx->libnet, &stat);
         printf("RST packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
                "RST packet errors: %" PRId64 "\n",
@@ -163,11 +169,14 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
     memset(ctx, 0, sizeof(resetter_context_t));
 
     if (target_ip != NULL && target_port > 0) {
-        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "( host %s && tcp port %d )", target_ip, target_port);
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string),
+                "( host %s && tcp port %d )", target_ip, target_port);
     } else if (target_ip != NULL) {
-        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "host %s", target_ip);
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string),
+                "host %s", target_ip);
     } else if (target_port > 0) {
-        snprintf(ctx->filter_string, sizeof(ctx->filter_string), "tcp port %d", target_port);
+        snprintf(ctx->filter_string, sizeof(ctx->filter_string),
+                "tcp port %d", target_port);
     }
 
     ctx->cleanup = cleanup;
@@ -196,6 +205,7 @@ static void on_synack_packet_captured(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
         const u_char *packet) {
+    struct sockaddr_in saddr, daddr;
     struct libnet_ipv4_hdr *ip_hdr = (struct libnet_ipv4_hdr *)(packet + LIBNET_ETH_H);
     struct libnet_tcp_hdr *tcp_hdr = (struct libnet_tcp_hdr *)(packet + LIBNET_ETH_H + LIBNET_TCP_H);
 
@@ -212,7 +222,6 @@ static void on_synack_packet_captured(
     }
 
     // Get saddr/daddr from IPv4 header
-    struct sockaddr_in saddr, daddr;
     memset(&saddr, 0, sizeof(struct sockaddr_in));
     memset(&daddr, 0, sizeof(struct sockaddr_in));
     saddr.sin_addr.s_addr = *((uint32_t *)&(ip_hdr->ip_src));
