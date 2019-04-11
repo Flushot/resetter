@@ -1,14 +1,14 @@
 #include "resetter.h"
 #include "listener.h"
 
-static void on_synack_packet_captured(
-        resetter_context_t *,
-        const struct pcap_pkthdr *,
-        const u_char *);
+static void _on_synack_packet_captured(
+        resetter_context_t *ctx,
+        const struct pcap_pkthdr *cap_header,
+        const u_char *packet);
 
-static void cleanup(resetter_context_t *);
+static void _cleanup(resetter_context_t *);
 
-static int init_libnet(resetter_context_t *ctx) {
+static int _init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_RAW4; // Layer 3 (network)
     char errbuf[LIBNET_ERRBUF_SIZE];
 
@@ -26,7 +26,7 @@ static int init_libnet(resetter_context_t *ctx) {
     return 0;
 }
 
-static int update_pcap_filter(resetter_context_t *ctx) {
+static int _update_pcap_filter(resetter_context_t *ctx) {
     char *filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
     char *filter_suffix = ctx->filter_string;
     char *filter_string;
@@ -152,11 +152,11 @@ int send_reset_packet(
     return 0;
 }
 
-static void *resetter_thread(void *vargp) {
+static void *_resetter_thread(void *vargp) {
     thread_node *thread = (thread_node *)vargp;
     resetter_context_t *ctx = &thread->ctx;
 
-    if (listener_start(ctx, on_synack_packet_captured) != 0) {
+    if (listener_start(ctx, _on_synack_packet_captured) != 0) {
         listener_stop(ctx);
         return NULL;
     }
@@ -179,21 +179,21 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
                 "tcp port %d", target_port);
     }
 
-    ctx->cleanup = cleanup;
+    ctx->cleanup = _cleanup;
     ctx->device = device;
     ctx->target_port = target_port;
     if (target_ip != NULL) {
         ctx->target_addr.sin_addr.s_addr = inet_addr(target_ip);
     }
 
-    update_pcap_filter(ctx);
+    _update_pcap_filter(ctx);
     printf("Monitoring TCP traffic on %s ( %s )...\n", ctx->device, ctx->filter_string);
 
-    if (init_libnet(ctx) != 0) {
+    if (_init_libnet(ctx) != 0) {
         return -1;
     }
 
-    if (pthread_create(&thread->thread_id, NULL, resetter_thread, (void *)thread) != 0) {
+    if (pthread_create(&thread->thread_id, NULL, _resetter_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");
         return -1;
     }
@@ -201,7 +201,7 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
     return 0;
 }
 
-static void on_synack_packet_captured(
+static void _on_synack_packet_captured(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
         const u_char *packet) {
@@ -235,7 +235,7 @@ static void on_synack_packet_captured(
             htonl(tcp_hdr->th_ack));
 }
 
-static void cleanup(resetter_context_t *ctx) {
+static void _cleanup(resetter_context_t *ctx) {
     if (is_listener_started(ctx)) {
         listener_stop(ctx);
     }

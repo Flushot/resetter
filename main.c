@@ -7,11 +7,11 @@
 
 extern void testfunc();
 
-static char *detect_device();
+static char *_detect_device();
 
-static void on_signal_trapped(int);
+static void _on_signal_trapped(int);
 
-void usage(char **argv) {
+static void _usage(char **argv) {
     printf("usage: %s [-ahip] [target_ip]\n"
            "  -a           enable arp mitm\n"
            "  -h           help\n"
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
             case 'h':
                 // Help
-                usage(argv);
+                _usage(argv);
                 return EXIT_SUCCESS;
 
             case 'i':
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
             default:
                 // Unknown
-                usage(argv);
+                _usage(argv);
                 return EXIT_FAILURE;
         }
     }
@@ -63,12 +63,12 @@ int main(int argc, char **argv) {
     argv_remaining = &argv[optind];
     target_ip = argv_remaining[0];
 
-    signal(SIGINT, on_signal_trapped); // ^C
-    signal(SIGTERM, on_signal_trapped);
+    signal(SIGINT, _on_signal_trapped); // ^C
+    signal(SIGTERM, _on_signal_trapped);
 
     // Detect interface if null
     if (device == NULL) {
-        device = detect_device();
+        device = _detect_device();
         if (device == NULL)
             return EXIT_FAILURE;
     }
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-static char *detect_device() {
+static char *_detect_device() {
     char errbuf[PCAP_ERRBUF_SIZE];
     char *device = pcap_lookupdev(errbuf);
 
@@ -110,7 +110,7 @@ static char *detect_device() {
     return device;
 }
 
-static void on_signal_trapped(int signum) {
+static void _on_signal_trapped(int signum) {
     printf("\nTrapped signal %d\n", signum);
     thmgr_cleanup();
 }

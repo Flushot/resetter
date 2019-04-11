@@ -9,6 +9,7 @@ void test_hash_table_get_and_set();
 void test_hash_table_set_entry();
 void test_hash_table_del();
 void test_hash_table_keys();
+void test_hash_table_values();
 void test_hash_table_has_no_duplicates();
 void test_hash_table_iter();
 

@@ -72,7 +72,7 @@ void test_list() {
     list_destroy(&lst);
 }
 
-static void test_list_iter_func(list_node *item, int index, void *result) {
+static void _test_list_iter_func(list_node *item, int index, void *result) {
     strcat(result, item->value);
 }
 
@@ -86,7 +86,7 @@ void test_list_iter() {
     list_push(&lst, "bar");
     list_push(&lst, "spangle");
 
-    list_iter(&lst, test_list_iter_func, result);
+    list_iter(&lst, _test_list_iter_func, result);
     CU_ASSERT_STRING_EQUAL(result, "foobarspangle");
 
     list_destroy(&lst);
