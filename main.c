@@ -3,7 +3,6 @@
 #include "listener.h"
 #include "resetter.h"
 #include "thread_mgr.h"
-#include "hash_table.h"
 
 extern void testfunc();
 

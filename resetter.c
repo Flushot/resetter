@@ -69,7 +69,7 @@ int send_reset_packet(
     strncpy(saddr_str, inet_ntoa(saddr.sin_addr), sizeof(saddr_str));
     strncpy(daddr_str, inet_ntoa(daddr.sin_addr), sizeof(daddr_str));
 
-    printf("Resetting %s:%d <-> %s:%d\n",
+    printf("Resetting %s:%d <-> %s:%d\a\n",
            saddr_str, sport,
            daddr_str, dport);
 

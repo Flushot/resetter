@@ -3,15 +3,33 @@
 
 #include "context.h"
 
+/**
+ *
+ */
 typedef void (*listener_callback)(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
         const u_char *packet);
 
-int is_listener_started(resetter_context_t *);
+/**
+ *
+ * @param ctx
+ * @return
+ */
+int is_listener_started(resetter_context_t *ctx);
 
-int listener_start(resetter_context_t *, listener_callback);
+/**
+ *
+ * @param ctx
+ * @param callback
+ * @return
+ */
+int listener_start(resetter_context_t *ctx, listener_callback callback);
 
-void listener_stop(resetter_context_t *);
+/**
+ *
+ * @param ctx
+ */
+void listener_stop(resetter_context_t *ctx);
 
 #endif

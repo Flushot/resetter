@@ -18,13 +18,21 @@
  * @return 0 if successful, otherwise -1.
  */
 int send_reset_packet(
-        resetter_context_t *,
-        struct sockaddr_in,
-        uint16_t,
-        struct sockaddr_in,
-        uint16_t,
-        uint32_t);
+        resetter_context_t *ctx,
+        struct sockaddr_in saddr,
+        uint16_t sport,
+        struct sockaddr_in daddr,
+        uint16_t dport,
+        uint32_t ack);
 
-int start_resetter_thread(thread_node *, char *, char *, uint16_t);
+/**
+ *
+ * @param thread
+ * @param device
+ * @param target_ip
+ * @param target_port
+ * @return
+ */
+int start_resetter_thread(thread_node *thread, char *device, char *target_ip, uint16_t target_port);
 
 #endif

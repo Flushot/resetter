@@ -4,10 +4,29 @@
 #include "context.h"
 #include "thread_mgr.h"
 
-int send_arp_reply_packet(resetter_context_t *, struct sockaddr_in, uint8_t *);
+/**
+ *
+ * @param ctx
+ * @param addr
+ * @param victim_eth_addr
+ * @return
+ */
+int send_arp_reply_packet(resetter_context_t *ctx, struct sockaddr_in addr, uint8_t *victim_eth_addr);
 
-int send_arp_request_packet(resetter_context_t *, struct sockaddr_in);
+/**
+ *
+ * @param ctx
+ * @param addr
+ * @return
+ */
+int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in addr);
 
-int start_arp_mitm_thread(thread_node *, char *);
+/**
+ *
+ * @param thread
+ * @param device
+ * @return
+ */
+int start_arp_mitm_thread(thread_node *thread, char *device);
 
 #endif

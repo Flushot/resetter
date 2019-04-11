@@ -1,5 +1,6 @@
 #include "arp_mitm.h"
 #include "listener.h"
+#include "utils/net_utils.h"
 
 #define IP_ADDR_LEN 4
 #define BROADCAST_ETH_ADDR (uint8_t *)"\xFF\xFF\xFF\xFF\xFF\xFF"
@@ -117,22 +118,6 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     return 0;
 }
 
-static char *_ether_ntoa(uint8_t *ether_addr) {
-    static char addr_buf[18];
-    addr_buf[17] = 0;
-
-    snprintf(addr_buf, sizeof(addr_buf),
-             "%02x:%02x:%02x:%02x:%02x:%02x",
-             ether_addr[0],
-             ether_addr[1],
-             ether_addr[2],
-             ether_addr[3],
-             ether_addr[4],
-             ether_addr[5]);
-
-    return addr_buf;
-}
-
 static void _print_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
     struct sockaddr_in addr;
 
@@ -141,7 +126,7 @@ static void _print_arp_table_entry(hash_table_entry *entry, int index, void *use
 
     printf("%s: %s\n",
            inet_ntoa(addr.sin_addr),
-           _ether_ntoa((uint8_t *)entry->value));
+           ether_ntoa((uint8_t *)entry->value));
 }
 
 static void _unpoison(resetter_context_t *ctx) {
@@ -168,7 +153,7 @@ static struct libnet_ether_addr *_get_local_mac_addr(resetter_context_t *ctx) {
         }
 
         printf("Local MAC address: %s\n",
-               _ether_ntoa(local_mac_addr->ether_addr_octet));
+               ether_ntoa(local_mac_addr->ether_addr_octet));
     }
 
     return local_mac_addr;
@@ -209,10 +194,10 @@ int send_arp_reply_packet(
     }
 
     eth_src = local_mac_addr->ether_addr_octet;
-    printf("Spoof: Telling %s ", _ether_ntoa(victim_eth_addr));
+    printf("Spoof: Telling %s ", ether_ntoa(victim_eth_addr));
     printf("that %s is-at %s\n",
-            inet_ntoa(ip_addr.sin_addr),
-           _ether_ntoa(eth_src));
+           inet_ntoa(ip_addr.sin_addr),
+           ether_ntoa(eth_src));
 
     // Build ARP packet
     arp_tag = libnet_build_arp(
@@ -385,20 +370,20 @@ static void _on_arp_packet_captured(
     switch (htons(arp_hdr->ar_op)) {
         case ARPOP_REQUEST:
             // req to resolve address
-            printf("arp %s -> ", _ether_ntoa(eth_hdr->ether_shost));
-            printf("%s who-has %s ", _ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
-            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), _ether_ntoa(arp_payload->ar_sha));
+            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
+            printf("%s who-has %s ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
+            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), ether_ntoa(arp_payload->ar_sha));
 
             // TODO: if IP is in ctx->arp_table, send spoofed reply saying it's from this machine's MAC
             break;
 
         case ARPOP_REPLY:
             // resp to previous request
-            printf("arp %s -> ", _ether_ntoa(eth_hdr->ether_shost));
+            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
             printf("%s reply %s is-at ",
-                   _ether_ntoa(eth_hdr->ether_dhost),
-                    inet_ntoa(saddr.sin_addr));
-            printf("%s\n", _ether_ntoa(arp_payload->ar_sha));
+                   ether_ntoa(eth_hdr->ether_dhost),
+                   inet_ntoa(saddr.sin_addr));
+            printf("%s\n", ether_ntoa(arp_payload->ar_sha));
 
             if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
                 entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),

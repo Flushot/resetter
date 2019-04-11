@@ -8,13 +8,14 @@ set(resetter_VERSION_MINOR 0)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(SOURCES
-        list.c
-        hash_table.c
-        thread_mgr.c
+        arp_mitm.c
+        asmtest.asm
         listener.c
         resetter.c
-        arp_mitm.c
-        asmtest.asm)
+        thread_mgr.c
+        utils/hash_table.c
+        utils/list.c
+        utils/net_utils.c)
 
 #add_definitions(-DUSE_ZEROMQ)
 add_executable(resetter main.c ${SOURCES})
@@ -23,8 +24,8 @@ install(TARGETS resetter DESTINATION bin)
 # tests
 add_executable(test
         test.c
-        tests/list_test.c
         tests/hash_table_test.c
+        tests/list_test.c
         ${SOURCES})
 
 # C compiler

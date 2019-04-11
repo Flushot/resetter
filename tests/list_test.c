@@ -1,5 +1,5 @@
 #include "list_test.h"
-#include "../list.h"
+#include "../utils/list.h"
 
 CU_TestInfo *get_list_tests() {
     static CU_TestInfo tests[] = {
@@ -78,6 +78,7 @@ static void _test_list_iter_func(list_node *item, int index, void *result) {
 
 void test_list_iter() {
     list lst;
+    int ret;
     char result[500];
     memset(result, 0, sizeof(result));
 
@@ -86,7 +87,8 @@ void test_list_iter() {
     list_push(&lst, "bar");
     list_push(&lst, "spangle");
 
-    list_iter(&lst, _test_list_iter_func, result);
+    ret = list_iter(&lst, _test_list_iter_func, result);
+    CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_STRING_EQUAL(result, "foobarspangle");
 
     list_destroy(&lst);

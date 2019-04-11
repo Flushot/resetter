@@ -1,5 +1,5 @@
 #include "hash_table_test.h"
-#include "../hash_table.h"
+#include "../utils/hash_table.h"
 
 CU_TestInfo *get_hash_table_tests() {
     static CU_TestInfo tests[] = {
