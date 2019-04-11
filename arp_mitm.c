@@ -53,7 +53,7 @@ static void *arp_mitm_thread(void *vargp) {
 }
 
 static int arp_table_key_cmp(void *key_a, void *key_b) {
-    return *((uint32_t *)key_a) == *(uint32_t *)key_b;
+    return *((uint32_t *)key_a) - *((uint32_t *)key_b);
 }
 
 static uint32_t arp_table_key_hash(void *key, size_t ht_size) {
@@ -188,7 +188,7 @@ static void on_arp_packet_captured(
 
             if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
                 hash_table_entry *entry = ht_init_entry(&saddr.sin_addr.s_addr, sizeof(uint32_t),
-                                                        eth_hdr->ether_dhost, sizeof(uint8_t));
+                                                        arp_payload->ar_sha, sizeof(arp_payload->ar_sha));
                 if (entry == NULL) {
                     return;
                 }
