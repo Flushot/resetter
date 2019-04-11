@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include "../context.h"
 #include "net_utils.h"
 
 char *ether_ntoa(uint8_t *ether_addr) {
@@ -17,4 +18,25 @@ char *ether_ntoa(uint8_t *ether_addr) {
              ether_addr[5]);
 
     return addr_buf;
+}
+
+void maybe_print_libnet_stats(resetter_context_t *ctx, char *packet_type) {
+    u_long curr_time;
+    struct libnet_stats stat;
+
+    // Occasionally report packet sent/errors stats
+    curr_time = (u_long)time(0);
+    if (ctx->libnet_last_stats_at == 0) {
+        ctx->libnet_last_stats_at = curr_time;
+    } else if (curr_time - ctx->libnet_last_stats_at > 10) {
+        libnet_stats(ctx->libnet, &stat);
+        printf("%s packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
+               "%s packet errors: %" PRId64 "\n",
+               packet_type,
+               stat.packets_sent,
+               stat.bytes_written,
+               packet_type,
+               stat.packet_errors);
+        ctx->libnet_last_stats_at = curr_time;
+    }
 }

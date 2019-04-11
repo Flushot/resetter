@@ -159,25 +159,6 @@ static struct libnet_ether_addr *_get_local_mac_addr(resetter_context_t *ctx) {
     return local_mac_addr;
 }
 
-static void _maybe_print_stats(resetter_context_t *ctx) {
-    u_long curr_time;
-    struct libnet_stats stat;
-
-    // Occasionally report packet sent/errors stats
-    curr_time = (u_long)time(0);
-    if (ctx->libnet_last_stats_at == 0) {
-        ctx->libnet_last_stats_at = curr_time;
-    } else if (curr_time - ctx->libnet_last_stats_at > 10) {
-        libnet_stats(ctx->libnet, &stat);
-        printf("ARP packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
-               "ARP packet errors: %" PRId64 "\n",
-               stat.packets_sent,
-               stat.bytes_written,
-               stat.packet_errors);
-        ctx->libnet_last_stats_at = curr_time;
-    }
-}
-
 int send_arp_reply_packet(
         resetter_context_t *ctx,
         struct sockaddr_in ip_addr,
@@ -252,7 +233,7 @@ int send_arp_reply_packet(
         return -1;
     }
 
-    _maybe_print_stats(ctx);
+    maybe_print_libnet_stats(ctx, "ARP");
 
     return 0;
 }
@@ -329,7 +310,7 @@ int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in ip_addr)
         return -1;
     }
 
-    _maybe_print_stats(ctx);
+    maybe_print_libnet_stats(ctx, "ARP");
 
     return 0;
 }

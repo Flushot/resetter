@@ -1,6 +1,8 @@
 #include "resetter.h"
 #include "listener.h"
 
+#include "utils/net_utils.h"
+
 static void _on_synack_packet_captured(
         resetter_context_t *ctx,
         const struct pcap_pkthdr *cap_header,
@@ -60,8 +62,6 @@ int send_reset_packet(
         uint32_t ack) {
     char saddr_str[16], daddr_str[16];
     int bytes_written;
-    u_long curr_time;
-    struct libnet_stats stat;
     static libnet_ptag_t tcp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t ip_tag = LIBNET_PTAG_INITIALIZER;
 
@@ -132,22 +132,7 @@ int send_reset_packet(
         return -1;
     }
 
-    // Passing ptag to reuse packet instead of clearing (which is less CPU efficient)
-    // libnet_clear_packet(ctx.libnet);
-
-    // Occasionally report packet sent/errors stats
-    curr_time = (u_long)time(0);
-    if (ctx->libnet_last_stats_at == 0) {
-        ctx->libnet_last_stats_at = curr_time;
-    } else if (curr_time - ctx->libnet_last_stats_at > 10) {
-        libnet_stats(ctx->libnet, &stat);
-        printf("RST packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
-               "RST packet errors: %" PRId64 "\n",
-               stat.packets_sent,
-               stat.bytes_written,
-               stat.packet_errors);
-        ctx->libnet_last_stats_at = curr_time;
-    }
+    maybe_print_libnet_stats(ctx, "RST");
 
     return 0;
 }
