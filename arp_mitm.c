@@ -118,26 +118,32 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     return 0;
 }
 
-static void _print_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
+static void _unpoison_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
+    resetter_context_t *ctx = (resetter_context_t *)user_arg;
     struct sockaddr_in addr;
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_addr.s_addr = *((uint32_t *)entry->key);
 
-    printf("%s: %s\n",
+    printf("Unpoisoning: %s -> %s\n",
            inet_ntoa(addr.sin_addr),
            ether_ntoa((uint8_t *)entry->value));
+
+    if (send_arp_reply_packet(ctx, addr, BROADCAST_ETH_ADDR) != 0) {
+        fprintf(stderr, "Failed to unpoison!\n");
+        return;
+    }
+
+    ht_del(ctx->arp_table, entry->key);
 }
 
 static void _unpoison(resetter_context_t *ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
-    printf("--- Begin ARP Table ---\n");
-    ht_iter(ctx->arp_table, _print_arp_table_entry, NULL);
-    printf("--- End ARP Table ---\n");
-
-    // TODO: remove arp poison by restoring ctx->arp_table
+    if (ht_size(ctx->arp_table) > 0) {
+        ht_iter(ctx->arp_table, _unpoison_arp_table_entry, ctx);
+    }
 }
 
 static struct libnet_ether_addr *_get_local_mac_addr(resetter_context_t *ctx) {
@@ -175,7 +181,7 @@ int send_arp_reply_packet(
     }
 
     eth_src = local_mac_addr->ether_addr_octet;
-    printf("Spoof: Telling %s ", ether_ntoa(victim_eth_addr));
+    printf("Telling %s ", ether_ntoa(victim_eth_addr));
     printf("that %s is-at %s\n",
            inet_ntoa(ip_addr.sin_addr),
            ether_ntoa(eth_src));

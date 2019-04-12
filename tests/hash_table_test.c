@@ -11,6 +11,7 @@ CU_TestInfo *get_hash_table_tests() {
         { "test_hash_table_values", test_hash_table_values },
         { "test_hash_table_has_no_duplicates", test_hash_table_has_no_duplicates },
         { "test_hash_table_iter", test_hash_table_iter },
+        { "test_hash_table_size", test_hash_table_size },
         CU_TEST_INFO_NULL,
     };
 
@@ -187,4 +188,20 @@ void test_hash_table_iter() {
     CU_ASSERT_STRING_EQUAL(result, "bartwofooone");
 
     ht_destroy(&ht);
+}
+
+void test_hash_table_size() {
+    hash_table ht;
+
+    ht_init(&ht, 50, NULL, NULL);
+    CU_ASSERT_EQUAL(ht_size(&ht), 0);
+
+    ht_set(&ht, "foo", "one");
+    CU_ASSERT_EQUAL(ht_size(&ht), 1);
+
+    ht_set(&ht, "bar", "two");
+    CU_ASSERT_EQUAL(ht_size(&ht), 2);
+
+    ht_destroy(&ht);
+    CU_ASSERT_EQUAL(ht_size(&ht), -1);
 }

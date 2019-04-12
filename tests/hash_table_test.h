@@ -12,5 +12,6 @@ void test_hash_table_keys();
 void test_hash_table_values();
 void test_hash_table_has_no_duplicates();
 void test_hash_table_iter();
+void test_hash_table_size();
 
 #endif

@@ -284,6 +284,24 @@ int ht_keys(hash_table *ht, void **keys) {
     return user_arg.index;
 }
 
+static void _ht_size_iter_func(hash_table_entry *entry, int index, void *user_arg) {
+    struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
+
+    ++arg->index;
+}
+
+int ht_size(hash_table *ht) {
+    struct ht_array_builer_arg_t user_arg;
+
+    memset(&user_arg, 0, sizeof(user_arg));
+
+    if (ht_iter(ht, _ht_size_iter_func, &user_arg) != 0) {
+        return -1;
+    }
+
+    return user_arg.index;
+}
+
 static void _ht_values_iter_func(hash_table_entry *entry, int index, void *user_arg) {
     struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
 

@@ -184,4 +184,12 @@ int ht_keys(hash_table *ht, void **keys);
  */
 int ht_values(hash_table *ht, void **values);
 
+/**
+ * Get number of entries in hash table.
+ *
+ * @param ht hash table.
+ * @return number of entries.
+ */
+int ht_size(hash_table *ht);
+
 #endif
