@@ -23,16 +23,16 @@ void test_hash_table_init_and_destroy() {
     hash_table ht;
 
     ret = ht_init(&ht, 50, NULL, NULL);
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_EQUAL(ht.size, 50);
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_EQUAL(ht.size, 50)
 
     ht_set(&ht, "foo", "one");
     ht_set(&ht, "bar", "two");
 
     ret = ht_destroy(&ht);
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_PTR_NULL(ht_get(&ht, "foo"));
-    CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"));
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_PTR_NULL(ht_get(&ht, "foo"))
+    CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"))
 }
 
 void test_hash_table_get_and_set() {
@@ -42,20 +42,20 @@ void test_hash_table_get_and_set() {
     ht_init(&ht, 50, NULL, NULL);
 
     ret = ht_set(&ht, "foo", "one");
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one");
-    CU_ASSERT_PTR_NULL(ht_get(&ht, "doesnt_exist"));
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+    CU_ASSERT_PTR_NULL(ht_get(&ht, "doesnt_exist"))
 
     ret = ht_set(&ht, "bar", "two");
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one");
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "bar"), "two");
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "bar"), "two")
 
     ret = ht_set(&ht, "spangle", "fez");
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one");
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "bar"), "two");
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "spangle"), "fez");
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "bar"), "two")
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "spangle"), "fez")
 
     ht_destroy(&ht);
 }
@@ -66,18 +66,18 @@ void test_hash_table_set_entry() {
     int ret;
 
     hash_table_entry *entry = ht_init_entry(&key, sizeof(int), &value, sizeof(int));
-    CU_ASSERT_PTR_NOT_NULL_FATAL(entry);
-    CU_ASSERT_EQUAL(*((int *)entry->key), key);
-    CU_ASSERT_EQUAL(*((int *)entry->value), value);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(entry)
+    CU_ASSERT_EQUAL(*((int *)entry->key), key)
+    CU_ASSERT_EQUAL(*((int *)entry->value), value)
 
     hash_table ht;
     ht_init(&ht, 50, NULL, NULL);
 
     ret = ht_set_entry(&ht, entry);
-    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(ret, 0)
 
     ret = ht_destroy(&ht);
-    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(ret, 0)
 }
 
 void test_hash_table_del() {
@@ -90,9 +90,9 @@ void test_hash_table_del() {
     ht_set(&ht, "bar", "two");
 
     ret = ht_del(&ht, "bar");
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one");
-    CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"));
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+    CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"))
 
     ht_destroy(&ht);
 }
@@ -106,7 +106,7 @@ void test_hash_table_keys() {
     ht_init(&ht, 50, NULL, NULL);
 
     ret = ht_keys(&ht, (void **)keys);
-    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_PTR_NULL(keys[0])
 
     ht_set(&ht, "foo", "one");
@@ -114,11 +114,11 @@ void test_hash_table_keys() {
     ht_set(&ht, "spangle", "three");
 
     ret = ht_keys(&ht, (void **)keys);
-    CU_ASSERT_EQUAL(ret, 3);
-    CU_ASSERT_STRING_EQUAL(keys[0], "spangle");
-    CU_ASSERT_STRING_EQUAL(keys[1], "bar");
-    CU_ASSERT_STRING_EQUAL(keys[2], "foo");
-    CU_ASSERT_PTR_NULL(keys[3]);
+    CU_ASSERT_EQUAL(ret, 3)
+    CU_ASSERT_STRING_EQUAL(keys[0], "spangle")
+    CU_ASSERT_STRING_EQUAL(keys[1], "bar")
+    CU_ASSERT_STRING_EQUAL(keys[2], "foo")
+    CU_ASSERT_PTR_NULL(keys[3])
 
     ht_destroy(&ht);
 }
@@ -132,7 +132,7 @@ void test_hash_table_values() {
     ht_init(&ht, 50, NULL, NULL);
 
     ret = ht_values(&ht, (void **)values);
-    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_PTR_NULL(values[0])
 
     ht_set(&ht, "foo", "one");
@@ -140,11 +140,11 @@ void test_hash_table_values() {
     ht_set(&ht, "spangle", "three");
 
     ret = ht_values(&ht, (void **)values);
-    CU_ASSERT_EQUAL(ret, 3);
-    CU_ASSERT_STRING_EQUAL(values[0], "three");
-    CU_ASSERT_STRING_EQUAL(values[1], "two");
-    CU_ASSERT_STRING_EQUAL(values[2], "one");
-    CU_ASSERT_PTR_NULL(values[3]);
+    CU_ASSERT_EQUAL(ret, 3)
+    CU_ASSERT_STRING_EQUAL(values[0], "three")
+    CU_ASSERT_STRING_EQUAL(values[1], "two")
+    CU_ASSERT_STRING_EQUAL(values[2], "one")
+    CU_ASSERT_PTR_NULL(values[3])
 
     ht_destroy(&ht);
 }
@@ -160,9 +160,9 @@ void test_hash_table_has_no_duplicates() {
     ht_set(&ht, "a", "two");
 
     ret = ht_keys(&ht, (void **)keys);
-    CU_ASSERT_EQUAL(ret, 1); // One only key
+    CU_ASSERT_EQUAL(ret, 1) // One only key
 
-    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "a"), "two"); // Last value set
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "a"), "two") // Last value set
 
     ht_destroy(&ht);
 }
@@ -184,8 +184,8 @@ void test_hash_table_iter() {
     ht_set(&ht, "bar", "two");
 
     ret = ht_iter(&ht, test_hash_table_iter_func, result);
-    CU_ASSERT_EQUAL(ret, 0);
-    CU_ASSERT_STRING_EQUAL(result, "bartwofooone");
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(result, "bartwofooone")
 
     ht_destroy(&ht);
 }
@@ -194,14 +194,14 @@ void test_hash_table_size() {
     hash_table ht;
 
     ht_init(&ht, 50, NULL, NULL);
-    CU_ASSERT_EQUAL(ht_size(&ht), 0);
+    CU_ASSERT_EQUAL(ht_size(&ht), 0)
 
     ht_set(&ht, "foo", "one");
-    CU_ASSERT_EQUAL(ht_size(&ht), 1);
+    CU_ASSERT_EQUAL(ht_size(&ht), 1)
 
     ht_set(&ht, "bar", "two");
-    CU_ASSERT_EQUAL(ht_size(&ht), 2);
+    CU_ASSERT_EQUAL(ht_size(&ht), 2)
 
     ht_destroy(&ht);
-    CU_ASSERT_EQUAL(ht_size(&ht), -1);
+    CU_ASSERT_EQUAL(ht_size(&ht), -1)
 }
