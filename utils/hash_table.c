@@ -28,7 +28,12 @@ static uint32_t _default_key_hash(void *key, size_t ht_size) {
     return hash;
 }
 
-int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func key_hash) {
+int ht_init(
+    hash_table *ht,
+    uint32_t size,
+    key_cmp_func key_cmp,
+    key_hash_func key_hash
+) {
     size_t index_size;
 
     memset(ht, 0, sizeof(hash_table));
@@ -50,8 +55,9 @@ int ht_init(hash_table *ht, uint32_t size, key_cmp_func key_cmp, key_hash_func k
 }
 
 hash_table_entry *ht_init_entry(
-        void *key, size_t key_size,
-        void *value, size_t value_size) {
+    void *key, size_t key_size,
+    void *value, size_t value_size
+) {
     hash_table_entry *entry = malloc(sizeof(hash_table_entry));
     if (entry == NULL) {
         perror("malloc() failed");
@@ -209,7 +215,11 @@ int ht_del(hash_table *ht, void *key) {
     return found ? 0 : -1;
 }
 
-static void _ht_destroy_iter_func(hash_table_entry *entry, int _index, void *_user_arg) {
+static void _ht_destroy_iter_func(
+    hash_table_entry *entry,
+    int _index,
+    void *_user_arg
+) {
     if (entry->must_destroy) {
         ht_destroy_entry(entry);
     } else {
@@ -229,7 +239,11 @@ int ht_destroy(hash_table *ht) {
     return 0;
 }
 
-int ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
+int ht_iter(
+    hash_table *ht,
+    ht_iter_func iter_func,
+    void *iter_func_user_arg
+) {
     int i;
     list *list;
     list_node *iter;
@@ -257,7 +271,11 @@ int ht_iter(hash_table *ht, ht_iter_func iter_func, void *iter_func_user_arg) {
     return 0;
 }
 
-static void _ht_dump_iter_func(hash_table_entry *entry, int index, void *_user_arg) {
+static void _ht_dump_iter_func(
+    hash_table_entry *entry,
+    int index,
+    void *_user_arg
+) {
     printf("%d: { \"%s\" => \"%s\" }\n", index, entry->key, entry->value);
 }
 
@@ -265,7 +283,11 @@ void ht_dump(hash_table *ht) {
     ht_iter(ht, _ht_dump_iter_func, NULL);
 }
 
-static void _ht_keys_iter_func(hash_table_entry *entry, int _index, void *user_arg) {
+static void _ht_keys_iter_func(
+    hash_table_entry *entry,
+    int _index,
+    void *user_arg
+) {
     struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
 
     arg->items[arg->index++] = entry->key;
@@ -284,7 +306,11 @@ int ht_keys(hash_table *ht, void **keys) {
     return user_arg.index;
 }
 
-static void _ht_size_iter_func(hash_table_entry *_entry, int _index, void *user_arg) {
+static void _ht_size_iter_func(
+    hash_table_entry *_entry,
+    int _index,
+    void *user_arg
+) {
     struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
 
     ++arg->index;
@@ -302,7 +328,11 @@ int ht_size(hash_table *ht) {
     return user_arg.index;
 }
 
-static void _ht_values_iter_func(hash_table_entry *entry, int _index, void *user_arg) {
+static void _ht_values_iter_func(
+    hash_table_entry *entry,
+    int _index,
+    void *user_arg
+) {
     struct ht_array_builer_arg_t *arg = (struct ht_array_builer_arg_t *)user_arg;
 
     arg->items[arg->index++] = entry->value;

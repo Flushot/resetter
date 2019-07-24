@@ -7,9 +7,10 @@
  *
  */
 typedef void (*listener_callback)(
-        resetter_context_t *ctx,
-        const struct pcap_pkthdr *cap_header,
-        const u_char *packet);
+    resetter_context_t *ctx,
+    const struct pcap_pkthdr *cap_header,
+    const u_char *packet
+);
 
 /**
  *
@@ -24,7 +25,10 @@ int is_listener_started(resetter_context_t *ctx);
  * @param callback
  * @return
  */
-int listener_start(resetter_context_t *ctx, listener_callback callback);
+int listener_start(
+    resetter_context_t *ctx,
+    listener_callback callback
+);
 
 /**
  *

@@ -20,7 +20,10 @@ char *ether_ntoa(uint8_t *ether_addr) {
     return addr_buf;
 }
 
-void maybe_print_libnet_stats(resetter_context_t *ctx, char *packet_type) {
+void maybe_print_libnet_stats(
+    resetter_context_t *ctx,
+    char *packet_type
+) {
     u_long curr_time;
     struct libnet_stats stat;
 

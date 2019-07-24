@@ -115,7 +115,11 @@ int list_del_at(list *lst, int pos);
 /**
  *
  */
-typedef void (*list_iter_func)(list_node *lst, int index, void *user_arg);
+typedef void (*list_iter_func)(
+    list_node *lst,
+    int index,
+    void *user_arg
+);
 
 /**
  * Iterate list items.
@@ -125,7 +129,11 @@ typedef void (*list_iter_func)(list_node *lst, int index, void *user_arg);
  * @param iter_func_user_arg optional argument to pass to callback function.
  * @return 0 on success, -1 on failure.
  */
-int list_iter(list *lst, list_iter_func iter_func, void *iter_func_user_arg);
+int list_iter(
+    list *lst,
+    list_iter_func iter_func,
+    void *iter_func_user_arg
+);
 
 /**
  * Print the list to the console.

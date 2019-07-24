@@ -118,7 +118,11 @@ int start_arp_mitm_thread(thread_node *thread, char *device) {
     return 0;
 }
 
-static void _unpoison_arp_table_entry(hash_table_entry *entry, int index, void *user_arg) {
+static void _unpoison_arp_table_entry(
+    hash_table_entry *entry,
+    int index,
+    void *user_arg
+) {
     resetter_context_t *ctx = (resetter_context_t *)user_arg;
     struct sockaddr_in addr;
 
@@ -166,9 +170,10 @@ static struct libnet_ether_addr *_get_local_mac_addr(resetter_context_t *ctx) {
 }
 
 int send_arp_reply_packet(
-        resetter_context_t *ctx,
-        struct sockaddr_in ip_addr,
-        uint8_t *victim_eth_addr) {
+    resetter_context_t *ctx,
+    struct sockaddr_in ip_addr,
+    uint8_t *victim_eth_addr
+) {
     uint8_t *eth_src;
     uint8_t *ip_src = (uint8_t *)&ip_addr.sin_addr.s_addr;
     int bytes_written;
@@ -322,9 +327,10 @@ int send_arp_request_packet(resetter_context_t *ctx, struct sockaddr_in ip_addr)
 }
 
 static void _on_arp_packet_captured(
-        resetter_context_t *ctx,
-        const struct pcap_pkthdr *cap_header,
-        const u_char *packet) {
+    resetter_context_t *ctx,
+    const struct pcap_pkthdr *cap_header,
+    const u_char *packet
+) {
     struct sockaddr_in saddr, daddr;
     struct libnet_ethernet_hdr *eth_hdr;
     struct libnet_arp_hdr *arp_hdr;

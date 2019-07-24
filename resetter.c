@@ -56,10 +56,11 @@ static int _update_pcap_filter(resetter_context_t *ctx) {
 }
 
 int send_reset_packet(
-        resetter_context_t *ctx,
-        struct sockaddr_in saddr, uint16_t sport,
-        struct sockaddr_in daddr, uint16_t dport,
-        uint32_t ack) {
+    resetter_context_t *ctx,
+    struct sockaddr_in saddr, uint16_t sport,
+    struct sockaddr_in daddr, uint16_t dport,
+    uint32_t ack
+) {
     char saddr_str[16], daddr_str[16];
     int bytes_written;
     static libnet_ptag_t tcp_tag = LIBNET_PTAG_INITIALIZER;
@@ -149,7 +150,12 @@ static void *_resetter_thread(void *vargp) {
     return NULL;
 }
 
-int start_resetter_thread(thread_node *thread, char *device, char *target_ip, uint16_t target_port) {
+int start_resetter_thread(
+    thread_node *thread,
+    char *device,
+    char *target_ip,
+    uint16_t target_port
+) {
     resetter_context_t *ctx = &thread->ctx;
     memset(ctx, 0, sizeof(resetter_context_t));
 
@@ -187,9 +193,10 @@ int start_resetter_thread(thread_node *thread, char *device, char *target_ip, ui
 }
 
 static void _on_synack_packet_captured(
-        resetter_context_t *ctx,
-        const struct pcap_pkthdr *cap_header,
-        const u_char *packet) {
+    resetter_context_t *ctx,
+    const struct pcap_pkthdr *cap_header,
+    const u_char *packet
+) {
     struct sockaddr_in saddr, daddr;
     struct libnet_ipv4_hdr *ip_hdr = (struct libnet_ipv4_hdr *)(packet + LIBNET_ETH_H);
     struct libnet_tcp_hdr *tcp_hdr = (struct libnet_tcp_hdr *)(packet + LIBNET_ETH_H + LIBNET_TCP_H);

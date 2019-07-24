@@ -196,7 +196,11 @@ int list_del_at(list *lst, int pos) {
     return 0;
 }
 
-int list_iter(list *lst, list_iter_func iter_func, void *iter_func_user_arg) {
+int list_iter(
+    list *lst,
+    list_iter_func iter_func,
+    void *iter_func_user_arg
+) {
     list_node *curr, *iter = lst->head;
     if (iter == NULL) {
         fprintf(stderr, "list is empty");
@@ -213,7 +217,11 @@ int list_iter(list *lst, list_iter_func iter_func, void *iter_func_user_arg) {
     return 0;
 }
 
-static void _list_dump_iter_func(list_node *item, int _index, void *_user_arg) {
+static void _list_dump_iter_func(
+    list_node *item,
+    int _index,
+    void *_user_arg
+) {
     printf("\"%s\", ", item->value);
 }
 
@@ -223,7 +231,11 @@ void list_dump(list *lst) {
     printf(" ]\n");
 }
 
-static void _list_destroy_iter_func(list_node *item, int _index, void *_user_arg) {
+static void _list_destroy_iter_func(
+    list_node *item,
+    int _index,
+    void *_user_arg
+) {
     free(item);
 }
 
