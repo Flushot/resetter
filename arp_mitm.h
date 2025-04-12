@@ -12,7 +12,7 @@
  * @return
  */
 int send_arp_reply_packet(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     struct sockaddr_in addr,
     const uint8_t* victim_eth_addr
 );
@@ -24,7 +24,7 @@ int send_arp_reply_packet(
  * @return
  */
 int send_arp_request_packet(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     struct sockaddr_in addr
 );
 

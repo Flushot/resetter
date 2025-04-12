@@ -1,6 +1,11 @@
 /**
  * Experimental and untested module
  */
+#include <stdio.h>
+#include <stdio.h>
+#include <inttypes.h> // PRId64
+#include <pthread.h>
+
 #include "arp_mitm.h"
 #include "listener.h"
 #include "utils/net_utils.h"
@@ -11,7 +16,7 @@
 /*
  * ARP payload
  */
-typedef struct _arp_payload_t {
+typedef struct arp_payload_t {
     u_char ar_sha[ETHER_ADDR_LEN]; // Sender HW addr
     u_char ar_spa[IP_ADDR_LEN]; // Sender IP addr
     u_char ar_tha[ETHER_ADDR_LEN]; // Target HW addr
@@ -19,13 +24,13 @@ typedef struct _arp_payload_t {
 } arp_payload_t;
 
 static void _on_arp_packet_captured(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet);
 
-static void _cleanup(resetter_context_t* ctx);
+static void cleanup(resetter_context* ctx);
 
-static int _init_libnet(resetter_context_t* ctx) {
+static int init_libnet(resetter_context* ctx) {
     int injection_type = LIBNET_LINK; // Layer 2 (link)
     char errbuf[LIBNET_ERRBUF_SIZE];
 
@@ -46,7 +51,7 @@ static int _init_libnet(resetter_context_t* ctx) {
 
 static void* _arp_mitm_thread(void* vargp) {
     thread_node* thread = (thread_node *)vargp;
-    resetter_context_t* ctx = &thread->ctx;
+    resetter_context* ctx = &thread->ctx;
 
     if (listener_start(ctx, _on_arp_packet_captured) != 0) {
         listener_stop(ctx);
@@ -64,7 +69,7 @@ static uint32_t _arp_table_key_hash(const void* key, size_t ht_size) {
     return *((uint32_t *)key) % (ht_size - 1);
 }
 
-static void _arp_test_stuff(resetter_context_t* ctx) {
+static void _arp_test_stuff(resetter_context* ctx) {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(struct sockaddr_in));
 
@@ -91,10 +96,10 @@ static void _arp_test_stuff(resetter_context_t* ctx) {
 }
 
 int start_arp_mitm_thread(thread_node* thread, char* device) {
-    resetter_context_t* ctx = &thread->ctx;
-    memset(ctx, 0, sizeof(resetter_context_t));
+    resetter_context* ctx = &thread->ctx;
+    memset(ctx, 0, sizeof(resetter_context));
 
-    ctx->cleanup = _cleanup;
+    ctx->cleanup = cleanup;
     ctx->device = device;
     ctx->arp_poisoning = 1;
     strcpy(ctx->filter_string, "arp");
@@ -107,7 +112,7 @@ int start_arp_mitm_thread(thread_node* thread, char* device) {
 
     printf("Monitoring ARP traffic on %s ( %s )...\n", device, ctx->filter_string);
 
-    if (_init_libnet(ctx) != 0) {
+    if (init_libnet(ctx) != 0) {
         return -1;
     }
 
@@ -126,7 +131,7 @@ static void _unpoison_arp_table_entry(
     int index,
     void* user_arg
 ) {
-    resetter_context_t* ctx = (resetter_context_t *)user_arg;
+    resetter_context* ctx = (resetter_context *)user_arg;
     struct sockaddr_in addr;
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -144,7 +149,7 @@ static void _unpoison_arp_table_entry(
     ht_del(ctx->arp_table, entry->key);
 }
 
-static void _unpoison(resetter_context_t* ctx) {
+static void _unpoison(resetter_context* ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
@@ -153,7 +158,7 @@ static void _unpoison(resetter_context_t* ctx) {
     }
 }
 
-static struct libnet_ether_addr* _get_local_mac_addr(const resetter_context_t* ctx) {
+static struct libnet_ether_addr* _get_local_mac_addr(const resetter_context* ctx) {
     static struct libnet_ether_addr* local_mac_addr = NULL;
 
     // Resolve local MAC address
@@ -173,7 +178,7 @@ static struct libnet_ether_addr* _get_local_mac_addr(const resetter_context_t* c
 }
 
 int send_arp_reply_packet(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     struct sockaddr_in ip_addr,
     const uint8_t* victim_eth_addr
 ) {
@@ -250,7 +255,7 @@ int send_arp_reply_packet(
     return 0;
 }
 
-int send_arp_request_packet(resetter_context_t* ctx, struct sockaddr_in ip_addr) {
+int send_arp_request_packet(resetter_context* ctx, struct sockaddr_in ip_addr) {
     uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
     uint8_t* ip_src = (uint8_t *)&local_ip;
     uint8_t* ip_dst = (uint8_t *)&ip_addr.sin_addr.s_addr;
@@ -326,7 +331,7 @@ int send_arp_request_packet(resetter_context_t* ctx, struct sockaddr_in ip_addr)
 }
 
 static void _on_arp_packet_captured(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet
 ) {
@@ -395,7 +400,7 @@ static void _on_arp_packet_captured(
     }
 }
 
-static void _cleanup(resetter_context_t* ctx) {
+static void cleanup(resetter_context* ctx) {
     _unpoison(ctx);
 
     if (is_listener_started(ctx)) {

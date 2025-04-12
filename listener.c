@@ -1,11 +1,11 @@
 #include "listener.h"
 
-typedef struct _packet_capture_args {
-    resetter_context_t* ctx;
+typedef struct packet_capture_args {
+    resetter_context* ctx;
     listener_callback callback;
 } packet_capture_args;
 
-static void _on_packet_captured(
+static void on_packet_captured(
     u_char* user_args,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet) {
@@ -13,7 +13,7 @@ static void _on_packet_captured(
     (*args->callback)(args->ctx, cap_header, packet);
 }
 
-static int _listener_init(resetter_context_t* ctx) {
+static int listener_init(resetter_context* ctx) {
     const int snapshot_length = 2048;
     const int promiscuous = 1; // Promiscuous mode
     const int timeout = 1; // Packet buffer timeout https://www.tcpdump.org/manpages/pcap.3pcap.html
@@ -33,7 +33,7 @@ static int _listener_init(resetter_context_t* ctx) {
     return 0;
 }
 
-static int _set_pcap_filter(resetter_context_t* ctx) {
+static int set_pcap_filter(const resetter_context* ctx) {
     struct bpf_program filter;
 
     // Compile BPF filter
@@ -51,18 +51,18 @@ static int _set_pcap_filter(resetter_context_t* ctx) {
     return 0;
 }
 
-int is_listener_started(resetter_context_t* ctx) {
+int is_listener_started(const resetter_context* ctx) {
     return ctx->pcap != NULL;
 }
 
-int listener_start(resetter_context_t* ctx, listener_callback callback) {
+int listener_start(resetter_context* ctx, const listener_callback callback) {
     packet_capture_args args;
 
-    if (_listener_init(ctx) != 0) {
+    if (listener_init(ctx) != 0) {
         return -1;
     }
 
-    if (_set_pcap_filter(ctx) != 0) {
+    if (set_pcap_filter(ctx) != 0) {
         return -1;
     }
 
@@ -70,12 +70,12 @@ int listener_start(resetter_context_t* ctx, listener_callback callback) {
     args.callback = callback;
 
     // Listen for packets
-    pcap_loop(ctx->pcap, -1, _on_packet_captured, (u_char *)&args);
+    pcap_loop(ctx->pcap, -1, on_packet_captured, (u_char *)&args);
 
     return 0;
 }
 
-void listener_stop(resetter_context_t* ctx) {
+void listener_stop(resetter_context* ctx) {
     if (ctx->pcap != NULL) {
         pcap_breakloop(ctx->pcap);
 

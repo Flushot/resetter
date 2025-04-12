@@ -1,12 +1,7 @@
 #ifndef __CORE_H__
 #define __CORE_H__
 
-#include <stdio.h>
-#include <stdio.h>
-#include <inttypes.h> // PRId64
-
 #include <pcap.h>
-#include <pthread.h>
 #include <libnet.h>
 
 #include "utils/hash_table.h"
@@ -15,7 +10,7 @@
  * Data structure with all handles
  * (so that cleanup can be simplified).
  */
-typedef struct _resetter_context_t {
+typedef struct resetter_context {
     /**
      * Device name to capture and inject packets on
      * (e.g. "en0").
@@ -70,7 +65,7 @@ typedef struct _resetter_context_t {
     /**
      * Cleanup function to call before program is terminated.
      */
-    void (*cleanup)(struct _resetter_context_t*);
-} resetter_context_t;
+    void (*cleanup)(struct resetter_context*);
+} resetter_context;
 
 #endif

@@ -1,16 +1,18 @@
+#include <pthread.h>
+
 #include "resetter.h"
 #include "listener.h"
 
 #include "utils/net_utils.h"
 
-static void _on_synack_packet_captured(
-    resetter_context_t* ctx,
+static void on_synack_packet_captured(
+    resetter_context* ctx,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet);
 
-static void _cleanup(resetter_context_t*);
+static void cleanup(resetter_context*);
 
-static int _init_libnet(resetter_context_t* ctx) {
+static int init_libnet(resetter_context* ctx) {
     int injection_type = LIBNET_RAW4; // Layer 3 (network)
     char errbuf[LIBNET_ERRBUF_SIZE];
 
@@ -28,11 +30,11 @@ static int _init_libnet(resetter_context_t* ctx) {
     return 0;
 }
 
-static int _update_pcap_filter(resetter_context_t* ctx) {
+static int update_pcap_filter(resetter_context* ctx) {
     char* filter_prefix = "( tcp[tcpflags] & tcp-ack != 0 ) && ";
     char* filter_suffix = ctx->filter_string;
 
-    if (filter_suffix != NULL && strlen(filter_suffix) == 0) {
+    if (strlen(filter_suffix) == 0) {
         // Default filter: All TCP traffic
         filter_suffix = "tcp";
     }
@@ -55,10 +57,10 @@ static int _update_pcap_filter(resetter_context_t* ctx) {
 }
 
 int send_reset_packet(
-    resetter_context_t* ctx,
-    struct sockaddr_in saddr, uint16_t sport,
-    struct sockaddr_in daddr, uint16_t dport,
-    uint32_t ack
+    resetter_context* ctx,
+    struct sockaddr_in saddr, const uint16_t sport,
+    struct sockaddr_in daddr, const uint16_t dport,
+    const uint32_t ack
 ) {
     char saddr_str[16], daddr_str[16];
     static libnet_ptag_t tcp_tag = LIBNET_PTAG_INITIALIZER;
@@ -136,11 +138,11 @@ int send_reset_packet(
     return 0;
 }
 
-static void* _resetter_thread(void* vargp) {
+static void* resetter_thread(void* vargp) {
     thread_node* thread = (thread_node *)vargp;
-    resetter_context_t* ctx = &thread->ctx;
+    resetter_context* ctx = &thread->ctx;
 
-    if (listener_start(ctx, _on_synack_packet_captured) != 0) {
+    if (listener_start(ctx, on_synack_packet_captured) != 0) {
         listener_stop(ctx);
         return NULL;
     }
@@ -152,10 +154,10 @@ int start_resetter_thread(
     thread_node* thread,
     char* device,
     char* target_ip,
-    uint16_t target_port
+    const uint16_t target_port
 ) {
-    resetter_context_t* ctx = &thread->ctx;
-    memset(ctx, 0, sizeof(resetter_context_t));
+    resetter_context* ctx = &thread->ctx;
+    memset(ctx, 0, sizeof(resetter_context));
 
     if (target_ip != NULL && target_port > 0) {
         snprintf(ctx->filter_string, sizeof(ctx->filter_string),
@@ -170,21 +172,21 @@ int start_resetter_thread(
                  "tcp port %d", target_port);
     }
 
-    ctx->cleanup = _cleanup;
+    ctx->cleanup = cleanup;
     ctx->device = device;
     ctx->target_port = target_port;
     if (target_ip != NULL) {
         ctx->target_addr.sin_addr.s_addr = inet_addr(target_ip);
     }
 
-    _update_pcap_filter(ctx);
+    update_pcap_filter(ctx);
     printf("Monitoring TCP traffic on %s ( %s )...\n", ctx->device, ctx->filter_string);
 
-    if (_init_libnet(ctx) != 0) {
+    if (init_libnet(ctx) != 0) {
         return -1;
     }
 
-    if (pthread_create(&thread->thread_id, NULL, _resetter_thread, (void *)thread) != 0) {
+    if (pthread_create(&thread->thread_id, NULL, resetter_thread, (void *)thread) != 0) {
         perror("pthread_create() failed");
         return -1;
     }
@@ -192,8 +194,8 @@ int start_resetter_thread(
     return 0;
 }
 
-static void _on_synack_packet_captured(
-    resetter_context_t* ctx,
+static void on_synack_packet_captured(
+    resetter_context* ctx,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet
 ) {
@@ -227,7 +229,7 @@ static void _on_synack_packet_captured(
                       htonl(tcp_hdr->th_ack));
 }
 
-static void _cleanup(resetter_context_t* ctx) {
+static void cleanup(resetter_context* ctx) {
     if (is_listener_started(ctx)) {
         listener_stop(ctx);
     }

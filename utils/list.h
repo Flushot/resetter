@@ -8,7 +8,7 @@
 /**
  * Linked list node.
  */
-typedef struct _list_node {
+typedef struct list_node {
     /**
      * Value of node.
      */
@@ -17,13 +17,13 @@ typedef struct _list_node {
     /**
      * Pointers to previous and next entries in list.
      */
-    struct _list_node *prev, *next;
+    struct list_node *prev, *next;
 } list_node;
 
 /**
  * List.
  */
-typedef struct _list {
+typedef struct list {
     /**
      * First node in list.
      */

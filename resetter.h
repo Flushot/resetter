@@ -18,7 +18,7 @@
  * @return 0 if successful, otherwise -1.
  */
 int send_reset_packet(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     struct sockaddr_in saddr,
     uint16_t sport,
     struct sockaddr_in daddr,

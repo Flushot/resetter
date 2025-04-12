@@ -5,12 +5,18 @@ set(resetter_VERSION_MAJOR 1)
 set(resetter_VERSION_MINOR 0)
 
 # Enable for debugging
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
+add_definitions(-DUSE_ZEROMQ)
+
+# C compiler flags
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb -fPIC")
+
+# Source files
 set(
         SOURCES
         arp_mitm.c
-        asmtest.asm
         listener.c
         resetter.c
         thread_mgr.c
@@ -20,57 +26,51 @@ set(
         utils/net_utils.c
 )
 
-#add_definitions(-DUSE_ZEROMQ)
-add_executable(resetter main.c ${SOURCES})
+# Main program
+add_library(resetter_shared ${SOURCES}) # Shared lib for tests
+add_executable(resetter main.c) # Main executable
 install(TARGETS resetter DESTINATION bin)
+target_link_libraries(resetter resetter_shared) # Link main executable to shared lib
 
-# tests
+# Unit tests
 add_executable(
         test
         test.c
         tests/murmur3_test.c
         tests/hash_table_test.c
         tests/list_test.c
-        ${SOURCES}
 )
 
-# C compiler
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb -fPIC")
-
-# x86 compiler
-enable_language(ASM_NASM)
-if (CMAKE_ASM_NASM_COMPILER_LOADED)
-    set(CAN_USE_ASSEMBLER TRUE)
-    file(GLOB_RECURSE ENGINE_ASM_FILES "*.asm")
-    set(ENGINE_SOURCES ${ENGINE_SOURCES} ${ENGINE_ASM_FILES})
-endif (CMAKE_ASM_NASM_COMPILER_LOADED)
-
 # libnet
-# TODO: figure out how to run $(libnet-config --defines)
-set(net_HAVE_SOCKADDR_SA_LEN ON)
-set(net_LIBNET_BSD_BYTE_SWAP ON)
-find_library(NET_LIB NAMES net libnet.a REQUIRED)
-find_path(NET_LIB_INCLUDE_DIR NAMES libnet.h REQUIRED)
-target_include_directories(resetter PRIVATE ${NET_LIB_INCLUDE_DIR})
-target_include_directories(test PRIVATE ${NET_LIB_INCLUDE_DIR})
-target_link_libraries(resetter ${NET_LIB})
-target_link_libraries(test ${NET_LIB})
+find_library(NET NAMES net libnet.a REQUIRED)
+find_path(NET_INCLUDE_DIR NAMES libnet.h REQUIRED)
+target_include_directories(resetter_shared PUBLIC ${NET_INCLUDE_DIR})
+target_link_libraries(resetter_shared ${NET})
+execute_process(
+        COMMAND libnet-config --defines
+        OUTPUT_VARIABLE NET_DEFINES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string(REPLACE " " ";" NET_DEFINES_LIST "${NET_DEFINES}")
+target_compile_definitions(resetter_shared PUBLIC ${NET_DEFINES_LIST})
 
 # libpcap
-find_library(PCAP_LIB NAMES pcap libpcap.a REQUIRED)
-target_link_libraries(resetter ${PCAP_LIB})
-target_link_libraries(test ${PCAP_LIB})
+find_library(PCAP NAMES pcap libpcap.a REQUIRED)
+target_link_libraries(resetter_shared ${PCAP})
 
-#get_directory_property(MYDEFS COMPILE_DEFINITIONS)
-#if(MYDEFS MATCHES "USE_ZEROMQ")
 # zeromq
-#find_library(zmqp libzmq.a)
-#target_link_libraries(resetter zmq)
-#endif()
+get_directory_property(MYDEFS COMPILE_DEFINITIONS)
+if (MYDEFS MATCHES "USE_ZEROMQ")
+    find_library(ZMQ NAMES zmq libzmq.a REQUIRED)
+    target_include_directories(resetter_shared PUBLIC ${ZMQ_INCLUDE_DIR})
+    target_link_libraries(resetter_shared ${ZMQ})
+endif ()
 
 # cunit
-find_library(CUNIT_LIB NAMES cunit cunit.a REQUIRED)
+find_library(CUNIT NAMES cunit cunit.a REQUIRED)
 find_path(CUNIT_INCLUDE_DIR NAMES CUnit/CUnit.h REQUIRED)
 target_include_directories(test PRIVATE ${CUNIT_INCLUDE_DIR})
-target_link_libraries(test ${CUNIT_LIB})
+target_link_libraries(test PRIVATE ${CUNIT})
+
+# link test against main program
+target_link_libraries(test PRIVATE resetter_shared)

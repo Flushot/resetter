@@ -12,7 +12,7 @@
 /**
  * Hash table entry.
  */
-typedef struct _hash_table_entry {
+typedef struct hash_table_entry {
     /**
      * Pointer to key.
      */
@@ -43,7 +43,7 @@ typedef uint32_t (*key_hash_func)(const void* key, size_t ht_size);
 /**
  * Hash table.
  */
-typedef struct _hash_table {
+typedef struct hash_table {
     /**
      * Size of the index.
      * This is NOT the size of all stored entries.

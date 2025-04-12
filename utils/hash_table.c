@@ -11,23 +11,23 @@ struct ht_array_builder_arg_t {
     void** items;
 };
 
-static size_t _find_index(const hash_table* ht, const void* key) {
+static size_t find_index(const hash_table* ht, const void* key) {
     return (*ht->key_hash)(key, ht->size) % (ht->size - 1);
 }
 
-static int _default_key_cmp(const void* key_a, const void* key_b) {
+static int default_key_cmp(const void* key_a, const void* key_b) {
     return strcmp(key_a, key_b);
 }
 
-static uint32_t _default_key_hash(const void* key, size_t ht_size) {
+static uint32_t default_key_hash(const void* key, size_t ht_size) {
     return murmur3(key, strlen(key), hash_seed) % (ht_size - 1);
 }
 
 int ht_init(
     hash_table* ht,
-    uint32_t size,
-    key_cmp_func key_cmp,
-    key_hash_func key_hash
+    const uint32_t size,
+    const key_cmp_func key_cmp,
+    const key_hash_func key_hash
 ) {
     memset(ht, 0, sizeof(hash_table));
     ht->size = size;
@@ -41,8 +41,8 @@ int ht_init(
 
     memset(ht->index, 0, index_size);
 
-    ht->key_cmp = key_cmp == NULL ? _default_key_cmp : key_cmp;
-    ht->key_hash = key_hash == NULL ? _default_key_hash : key_hash;
+    ht->key_cmp = key_cmp == NULL ? default_key_cmp : key_cmp;
+    ht->key_hash = key_hash == NULL ? default_key_hash : key_hash;
 
     return 0;
 }
@@ -108,7 +108,7 @@ int ht_set_entry(const hash_table* ht, hash_table_entry* entry) {
         return -1;
     }
 
-    size_t index = _find_index(ht, entry->key);
+    size_t index = find_index(ht, entry->key);
     list* p_list = *(ht->index + index);
     if (p_list == NULL) {
         // First entry: Start a new linked list
@@ -144,7 +144,7 @@ void* ht_get(const hash_table* ht, const void* key) {
         return NULL;
     }
 
-    size_t index = _find_index(ht, key);
+    size_t index = find_index(ht, key);
     list* p_list = ht->index[index];
     if (p_list == NULL || p_list->size == 0) {
         // No entry
@@ -172,7 +172,7 @@ int ht_del(const hash_table* ht, const void* key) {
         return -1;
     }
 
-    size_t index = _find_index(ht, key);
+    size_t index = find_index(ht, key);
     list* p_list = ht->index[index];
     if (p_list == NULL || p_list->size == 0) {
         // No entry
@@ -200,7 +200,7 @@ int ht_del(const hash_table* ht, const void* key) {
     return found ? 0 : -1;
 }
 
-static void _ht_destroy_iter_func(
+static void ht_destroy_iter_func(
     const hash_table_entry* entry,
     int _index,
     void* _user_arg
@@ -218,7 +218,7 @@ int ht_destroy(hash_table* ht) {
         return -1;
     }
 
-    ht_iter(ht, _ht_destroy_iter_func, NULL);
+    ht_iter(ht, ht_destroy_iter_func, NULL);
     free(ht->index);
     ht->index = NULL;
 
@@ -253,7 +253,7 @@ int ht_iter(
     return 0;
 }
 
-static void _ht_dump_iter_func(
+static void ht_dump_iter_func(
     const hash_table_entry* entry,
     int index,
     void* _user_arg
@@ -262,10 +262,10 @@ static void _ht_dump_iter_func(
 }
 
 void ht_dump(const hash_table* ht) {
-    ht_iter(ht, _ht_dump_iter_func, NULL);
+    ht_iter(ht, ht_dump_iter_func, NULL);
 }
 
-static void _ht_keys_iter_func(
+static void ht_keys_iter_func(
     const hash_table_entry* entry,
     int _index,
     void* user_arg
@@ -281,14 +281,14 @@ int ht_keys(const hash_table* ht, void** keys) {
     memset(&user_arg, 0, sizeof(user_arg));
     user_arg.items = keys;
 
-    if (ht_iter(ht, _ht_keys_iter_func, &user_arg) != 0) {
+    if (ht_iter(ht, ht_keys_iter_func, &user_arg) != 0) {
         return -1;
     }
 
     return user_arg.index;
 }
 
-static void _ht_size_iter_func(
+static void ht_size_iter_func(
     const hash_table_entry* _entry,
     int _index,
     void* user_arg
@@ -303,14 +303,14 @@ int ht_size(const hash_table* ht) {
 
     memset(&user_arg, 0, sizeof(user_arg));
 
-    if (ht_iter(ht, _ht_size_iter_func, &user_arg) != 0) {
+    if (ht_iter(ht, ht_size_iter_func, &user_arg) != 0) {
         return -1;
     }
 
     return user_arg.index;
 }
 
-static void _ht_values_iter_func(
+static void ht_values_iter_func(
     const hash_table_entry* entry,
     int _index,
     void* user_arg
@@ -326,7 +326,7 @@ int ht_values(const hash_table* ht, void** values) {
     memset(&user_arg, 0, sizeof(user_arg));
     user_arg.items = values;
 
-    if (ht_iter(ht, _ht_values_iter_func, &user_arg) != 0) {
+    if (ht_iter(ht, ht_values_iter_func, &user_arg) != 0) {
         return -1;
     }
 

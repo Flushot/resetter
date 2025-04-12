@@ -15,7 +15,7 @@ char* ether_ntoa(const uint8_t* ether_addr);
  * @param packet_type
  */
 void maybe_print_libnet_stats(
-    resetter_context_t* ctx,
+    resetter_context* ctx,
     char* packet_type
 );
 

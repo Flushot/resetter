@@ -1,3 +1,5 @@
+#include <pthread.h>
+
 #include "thread_mgr.h"
 #include "listener.h"
 
@@ -36,7 +38,7 @@ void thmgr_cleanup() {
     thread_node* thread;
 
     while ((thread = thread_list) != NULL) {
-        resetter_context_t* ctx = &thread->ctx;
+        resetter_context* ctx = &thread->ctx;
 
         if (ctx->cleanup) {
             (*ctx->cleanup)(ctx);

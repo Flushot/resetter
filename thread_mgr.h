@@ -6,7 +6,7 @@
 /**
  * Linked list for tracking threads
  */
-typedef struct _thread_node {
+typedef struct thread_node {
     /**
      *
      */
@@ -15,12 +15,12 @@ typedef struct _thread_node {
     /**
      *
      */
-    resetter_context_t ctx;
+    resetter_context ctx;
 
     /**
      *
      */
-    struct _thread_node* next;
+    struct thread_node* next;
 } thread_node;
 
 /**

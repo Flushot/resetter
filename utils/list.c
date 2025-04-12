@@ -14,7 +14,7 @@ list_node* list_rewind(list_node* node) {
     return p_head;
 }
 
-static list_node* _list_at(list_node* list, size_t pos) {
+static list_node* list_at(list_node* list, size_t pos) {
     list_node* p_iter = list;
 
     for (int i = 0; p_iter != NULL; ++i) {
@@ -36,7 +36,7 @@ int list_init(list* lst) {
 
 int list_insert_at(list* lst, void* value, size_t pos) {
     list_node* p_head = lst->head;
-    list_node* p_existing = _list_at(p_head, pos);
+    list_node* p_existing = list_at(p_head, pos);
 
     if (p_existing == NULL && p_head != NULL) {
         fprintf(stderr, "node does not exist at index %d\n", (int)pos);
@@ -73,7 +73,7 @@ int list_insert_at(list* lst, void* value, size_t pos) {
 }
 
 void* list_get_at(const list* lst, size_t pos) {
-    list_node* node = _list_at(lst->head, pos);
+    list_node* node = list_at(lst->head, pos);
 
     if (node == NULL) {
         return NULL;
@@ -137,7 +137,7 @@ list_node* list_tail_node(const list* lst) {
 
     size_t pos = lst->size - 1;
 
-    return _list_at(lst->head, pos);
+    return list_at(lst->head, pos);
 }
 
 void* list_tail(const list* lst) {
@@ -169,7 +169,7 @@ int list_del_at(list* lst, size_t pos) {
         return -1;
     }
 
-    list_node* p_item = _list_at(lst->head, pos);
+    list_node* p_item = list_at(lst->head, pos);
     if (p_item == NULL) {
         fprintf(stderr, "node does not exist at index %d", (int)pos);
         return -1;
@@ -214,7 +214,7 @@ int list_iter(
     return 0;
 }
 
-static void _list_dump_iter_func(
+static void list_dump_iter_func(
     const list_node* item,
     size_t _index,
     void* _user_arg
@@ -224,11 +224,11 @@ static void _list_dump_iter_func(
 
 void list_dump(const list* lst) {
     printf("[ ");
-    list_iter(lst, _list_dump_iter_func, NULL);
+    list_iter(lst, list_dump_iter_func, NULL);
     printf(" ]\n");
 }
 
-static void _list_destroy_iter_func(
+static void list_destroy_iter_func(
     const list_node* item,
     size_t _index,
     void* _user_arg
@@ -237,7 +237,7 @@ static void _list_destroy_iter_func(
 }
 
 int list_destroy(list* lst) {
-    list_iter(lst, _list_destroy_iter_func, NULL);
+    list_iter(lst, list_destroy_iter_func, NULL);
 
     lst->size = 0;
     lst->head = NULL;
