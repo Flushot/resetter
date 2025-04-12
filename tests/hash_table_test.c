@@ -24,7 +24,7 @@ void test_hash_table_init_and_destroy() {
 
     ret = ht_init(&ht, 50, NULL, NULL);
     CU_ASSERT_EQUAL(ret, 0)
-    CU_ASSERT_EQUAL(ht.size, 50)
+    CU_ASSERT_EQUAL(ht.index_size, 50)
 
     ht_set(&ht, "foo", "one");
     ht_set(&ht, "bar", "two");
@@ -167,7 +167,7 @@ void test_hash_table_has_no_duplicates() {
     ht_destroy(&ht);
 }
 
-static void test_hash_table_iter_func(const hash_table_entry* entry, int index, void* result) {
+static void test_hash_table_iter_func(const hash_table_entry* entry, const size_t index, void* result) {
     strcat(result, entry->key);
     strcat(result, entry->value);
 }
@@ -203,5 +203,5 @@ void test_hash_table_size() {
     CU_ASSERT_EQUAL(ht_size(&ht), 2)
 
     ht_destroy(&ht);
-    CU_ASSERT_EQUAL(ht_size(&ht), -1)
+    CU_ASSERT_EQUAL(ht_size(&ht), 0)
 }

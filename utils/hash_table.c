@@ -6,13 +6,13 @@
 
 static uint32_t hash_seed = 0x00000000; // TODO: randomize
 
-struct ht_array_builder_arg_t {
-    int index;
+struct ht_array_builder_arg {
+    size_t index;
     void** items;
 };
 
 static size_t find_index(const hash_table* ht, const void* key) {
-    return (*ht->key_hash)(key, ht->size) % (ht->size - 1);
+    return (*ht->key_hash)(key, ht->index_size) % (ht->index_size - 1);
 }
 
 static int default_key_cmp(const void* key_a, const void* key_b) {
@@ -30,7 +30,7 @@ int ht_init(
     const key_hash_func key_hash
 ) {
     memset(ht, 0, sizeof(hash_table));
-    ht->size = size;
+    ht->index_size = size;
 
     size_t index_size = size * sizeof(list);
     ht->index = malloc(index_size);
@@ -40,6 +40,8 @@ int ht_init(
     }
 
     memset(ht->index, 0, index_size);
+
+    ht->entry_size = 0;
 
     ht->key_cmp = key_cmp == NULL ? default_key_cmp : key_cmp;
     ht->key_hash = key_hash == NULL ? default_key_hash : key_hash;
@@ -88,7 +90,7 @@ int ht_destroy_entry(const hash_table_entry* entry) {
     return 0;
 }
 
-int ht_set(const hash_table* ht, void* key, void* value) {
+int ht_set(hash_table* ht, void* key, void* value) {
     hash_table_entry* p_entry = malloc(sizeof(hash_table_entry));
     if (p_entry == NULL) {
         perror("malloc() failed");
@@ -102,7 +104,7 @@ int ht_set(const hash_table* ht, void* key, void* value) {
     return ht_set_entry(ht, p_entry);
 }
 
-int ht_set_entry(const hash_table* ht, hash_table_entry* entry) {
+int ht_set_entry(hash_table* ht, hash_table_entry* entry) {
     if (ht->index == NULL) {
         fprintf(stderr, "hash table not initialized\n");
         return -1;
@@ -134,8 +136,10 @@ int ht_set_entry(const hash_table* ht, hash_table_entry* entry) {
         while (p_curr != NULL);
     }
 
+    ++ht->entry_size;
+
     // Add to list
-    return list_push(*(ht->index + index), entry);
+    return list_push_tail(*(ht->index + index), entry);
 }
 
 void* ht_get(const hash_table* ht, const void* key) {
@@ -166,7 +170,7 @@ void* ht_get(const hash_table* ht, const void* key) {
     return NULL;
 }
 
-int ht_del(const hash_table* ht, const void* key) {
+int ht_del(hash_table* ht, const void* key) {
     if (ht->index == NULL) {
         fprintf(stderr, "hash table not initialized\n");
         return -1;
@@ -180,13 +184,13 @@ int ht_del(const hash_table* ht, const void* key) {
     }
 
     int i = 0;
-    int found = 0;
+    size_t deleted_count = 0;
     list_node* p_curr = p_list->head;
     do {
         hash_table_entry* p_entry = p_curr->value;
         if ((*ht->key_cmp)(p_entry->key, key) == 0) {
             list_del_at(p_list, i);
-            found = 1;
+            ++deleted_count;
         }
         else {
             ++i;
@@ -196,13 +200,15 @@ int ht_del(const hash_table* ht, const void* key) {
     }
     while (p_curr != NULL);
 
+    ht->entry_size -= deleted_count;
+
     // No entry
-    return found ? 0 : -1;
+    return deleted_count > 0 ? 0 : -1;
 }
 
-static void ht_destroy_iter_func(
+static void destroy_iter_func(
     const hash_table_entry* entry,
-    int _index,
+    const size_t _index,
     void* _user_arg
 ) {
     if (entry->must_destroy) {
@@ -218,9 +224,11 @@ int ht_destroy(hash_table* ht) {
         return -1;
     }
 
-    ht_iter(ht, ht_destroy_iter_func, NULL);
+    ht_iter(ht, destroy_iter_func, NULL);
     free(ht->index);
     ht->index = NULL;
+
+    ht->entry_size = 0;
 
     return 0;
 }
@@ -235,7 +243,7 @@ int ht_iter(
         return -1;
     }
 
-    for (int i = 0; i < ht->size; ++i) {
+    for (int i = 0; i < ht->index_size; ++i) {
         list* p_list = ht->index[i];
         if (p_list != NULL) {
             list_node* p_iter = p_list->head;
@@ -253,75 +261,57 @@ int ht_iter(
     return 0;
 }
 
-static void ht_dump_iter_func(
+static void dump_iter_func(
     const hash_table_entry* entry,
-    int index,
+    const size_t index,
     void* _user_arg
 ) {
     printf("%d: { \"%s\" => \"%s\" }\n", index, (char *)entry->key, (char *)entry->value);
 }
 
 void ht_dump(const hash_table* ht) {
-    ht_iter(ht, ht_dump_iter_func, NULL);
+    ht_iter(ht, dump_iter_func, NULL);
 }
 
-static void ht_keys_iter_func(
+static void keys_iter_func(
     const hash_table_entry* entry,
-    int _index,
+    const size_t _index,
     void* user_arg
 ) {
-    struct ht_array_builder_arg_t* arg = user_arg;
+    struct ht_array_builder_arg* arg = user_arg;
 
     arg->items[arg->index++] = entry->key;
 }
 
-int ht_keys(const hash_table* ht, void** keys) {
-    struct ht_array_builder_arg_t user_arg;
+size_t ht_keys(const hash_table* ht, void** keys) {
+    struct ht_array_builder_arg user_arg;
 
     memset(&user_arg, 0, sizeof(user_arg));
     user_arg.items = keys;
 
-    if (ht_iter(ht, ht_keys_iter_func, &user_arg) != 0) {
+    if (ht_iter(ht, keys_iter_func, &user_arg) != 0) {
         return -1;
     }
 
     return user_arg.index;
 }
 
-static void ht_size_iter_func(
-    const hash_table_entry* _entry,
-    int _index,
-    void* user_arg
-) {
-    struct ht_array_builder_arg_t* arg = user_arg;
-
-    ++arg->index;
-}
-
-int ht_size(const hash_table* ht) {
-    struct ht_array_builder_arg_t user_arg;
-
-    memset(&user_arg, 0, sizeof(user_arg));
-
-    if (ht_iter(ht, ht_size_iter_func, &user_arg) != 0) {
-        return -1;
-    }
-
-    return user_arg.index;
+size_t ht_size(const hash_table* ht) {
+    return ht->entry_size;
 }
 
 static void ht_values_iter_func(
     const hash_table_entry* entry,
-    int _index,
+    const size_t _index,
     void* user_arg
 ) {
-    struct ht_array_builder_arg_t* arg = user_arg;
+    struct ht_array_builder_arg* arg = user_arg;
 
     arg->items[arg->index++] = entry->value;
 }
 
-int ht_values(const hash_table* ht, void** values) {
-    struct ht_array_builder_arg_t user_arg;
+size_t ht_values(const hash_table* ht, void** values) {
+    struct ht_array_builder_arg user_arg;
 
     memset(&user_arg, 0, sizeof(user_arg));
     user_arg.items = values;

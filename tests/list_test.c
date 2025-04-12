@@ -21,8 +21,8 @@ void test_list_init_and_destroy() {
     CU_ASSERT_EQUAL(lst.size, 0)
     CU_ASSERT_PTR_NULL(lst.head)
 
-    list_push(&lst, "foo");
-    list_push(&lst, "bar");
+    list_push_tail(&lst, "foo");
+    list_push_tail(&lst, "bar");
 
     ret = list_destroy(&lst);
     CU_ASSERT_EQUAL(ret, 0)
@@ -36,20 +36,21 @@ void test_list() {
 
     list_init(&lst);
 
-    ret = list_push(&lst, "foo");
+    ret = list_push_tail(&lst, "foo");
     CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_EQUAL(lst.size, 1)
     CU_ASSERT_STRING_EQUAL(lst.head->value, "foo")
     CU_ASSERT_PTR_NULL(lst.head->next)
 
-    ret = list_push(&lst, "bar");
+    ret = list_push_tail(&lst, "bar");
     CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_EQUAL(lst.size, 2)
-    CU_ASSERT_STRING_EQUAL(lst.head->value, "foo")
-    CU_ASSERT_STRING_EQUAL(lst.head->next->value, "bar")
-    CU_ASSERT_PTR_NULL(lst.head->next->next)
 
-    ret = list_shift(&lst, "spangle");
+    CU_ASSERT_STRING_EQUAL(lst.tail->value, "bar")
+    CU_ASSERT_STRING_EQUAL(lst.tail->prev->value, "foo")
+    CU_ASSERT_PTR_NULL(lst.tail->prev->prev)
+
+    ret = list_push_head(&lst, "spangle");
     CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_EQUAL(lst.size, 3)
     CU_ASSERT_STRING_EQUAL(lst.head->value, "spangle")
@@ -64,7 +65,7 @@ void test_list() {
     CU_ASSERT_STRING_EQUAL(lst.head->next->value, "bar")
     CU_ASSERT_PTR_NULL(lst.head->next->next)
 
-    list_pop(&lst);
+    list_pop_tail(&lst);
     CU_ASSERT_EQUAL(lst.size, 1)
     CU_ASSERT_STRING_EQUAL(lst.head->value, "foo")
     CU_ASSERT_PTR_NULL(lst.head->next)
@@ -83,9 +84,9 @@ void test_list_iter() {
     memset(result, 0, sizeof(result));
 
     list_init(&lst);
-    list_push(&lst, "foo");
-    list_push(&lst, "bar");
-    list_push(&lst, "spangle");
+    list_push_tail(&lst, "foo");
+    list_push_tail(&lst, "bar");
+    list_push_tail(&lst, "spangle");
 
     ret = list_iter(&lst, _test_list_iter_func, result);
     CU_ASSERT_EQUAL(ret, 0)
