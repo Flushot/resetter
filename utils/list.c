@@ -4,8 +4,8 @@
 
 #include "list.h"
 
-list_node *list_rewind(list_node *node) {
-    list_node *head = node;
+list_node* list_rewind(list_node* node) {
+    list_node* head = node;
 
     while (head->prev != NULL) {
         head = head->prev;
@@ -14,9 +14,9 @@ list_node *list_rewind(list_node *node) {
     return head;
 }
 
-static list_node *_list_at(list_node *list, int pos) {
+static list_node* _list_at(list_node* list, int pos) {
     int i;
-    list_node *iter = list;
+    list_node* iter = list;
 
     for (i = 0; iter != NULL; ++i) {
         if (i == pos) {
@@ -29,22 +29,22 @@ static list_node *_list_at(list_node *list, int pos) {
     return NULL;
 }
 
-int list_init(list *lst) {
+int list_init(list* lst) {
     memset(lst, 0, sizeof(list));
 
     return 0;
 }
 
-int list_insert_at(list *lst, void *value, int pos) {
-    list_node *head = lst->head;
-    list_node *existing = _list_at(head, pos);
+int list_insert_at(list* lst, void* value, int pos) {
+    list_node* head = lst->head;
+    list_node* existing = _list_at(head, pos);
 
     if (existing == NULL && head != NULL) {
         fprintf(stderr, "node does not exist at index %d\n", pos);
         return -1;
     }
 
-    list_node *item = (list_node *)malloc(sizeof(list_node));
+    list_node* item = (list_node *)malloc(sizeof(list_node));
     if (item == NULL) {
         perror("malloc() failed");
         return -1;
@@ -55,7 +55,8 @@ int list_insert_at(list *lst, void *value, int pos) {
 
     if (head == NULL) {
         lst->head = item;
-    } else {
+    }
+    else {
         // Shift existing right
         item->prev = existing->prev;
         item->next = existing;
@@ -72,8 +73,8 @@ int list_insert_at(list *lst, void *value, int pos) {
     return 0;
 }
 
-void *list_get_at(list *lst, int pos) {
-    list_node *node = _list_at(lst->head, pos);
+void* list_get_at(list* lst, int pos) {
+    list_node* node = _list_at(lst->head, pos);
 
     if (node == NULL) {
         return NULL;
@@ -82,13 +83,13 @@ void *list_get_at(list *lst, int pos) {
     return node->value;
 }
 
-int list_shift(list *list, void *value) {
+int list_shift(list* list, void* value) {
     return list_insert_at(list, value, 0);
 }
 
-void *list_unshift(list *lst) {
-    list_node *head = lst->head;
-    void *value;
+void* list_unshift(list* lst) {
+    list_node* head = lst->head;
+    void* value;
 
     if (head == NULL) {
         return NULL;
@@ -100,9 +101,9 @@ void *list_unshift(list *lst) {
     return value;
 }
 
-int list_push(list *lst, void *value) {
-    list_node *tail = lst->head;
-    list_node *item;
+int list_push(list* lst, void* value) {
+    list_node* tail = lst->head;
+    list_node* item;
 
     if (tail != NULL) {
         while (tail->next != NULL) {
@@ -122,7 +123,8 @@ int list_push(list *lst, void *value) {
     if (tail != NULL) {
         tail->next = item;
         item->prev = tail;
-    } else {
+    }
+    else {
         lst->head = item;
     }
 
@@ -131,7 +133,7 @@ int list_push(list *lst, void *value) {
     return 0;
 }
 
-list_node *list_tail_node(list *lst) {
+list_node* list_tail_node(list* lst) {
     int pos;
 
     if (lst->size == 0) {
@@ -143,19 +145,20 @@ list_node *list_tail_node(list *lst) {
     return _list_at(lst->head, pos);
 }
 
-void *list_tail(list *lst) {
-    list_node *tail = list_tail_node(lst);
+void* list_tail(list* lst) {
+    list_node* tail = list_tail_node(lst);
 
     if (tail == NULL) {
         return NULL;
-    } else {
+    }
+    else {
         return tail->value;
     }
 }
 
-void *list_pop(list *lst) {
+void* list_pop(list* lst) {
     int pos;
-    list_node *tail = list_tail_node(lst);
+    list_node* tail = list_tail_node(lst);
 
     if (tail == NULL) {
         return NULL;
@@ -167,8 +170,8 @@ void *list_pop(list *lst) {
     return tail->value;
 }
 
-int list_del_at(list *lst, int pos) {
-    list_node *item;
+int list_del_at(list* lst, int pos) {
+    list_node* item;
 
     if (lst->head == NULL) {
         return -1;
@@ -182,7 +185,8 @@ int list_del_at(list *lst, int pos) {
 
     if (item->prev != NULL) {
         item->prev->next = item->next;
-    } else {
+    }
+    else {
         lst->head = item->next;
     }
 
@@ -197,9 +201,9 @@ int list_del_at(list *lst, int pos) {
 }
 
 int list_iter(
-    list *lst,
+    list* lst,
     list_iter_func iter_func,
-    void *iter_func_user_arg
+    void* iter_func_user_arg
 ) {
     list_node *curr, *iter = lst->head;
     if (iter == NULL) {
@@ -212,34 +216,35 @@ int list_iter(
         curr = iter;
         iter = iter->next;
         iter_func(curr, i++, iter_func_user_arg);
-    } while (iter != NULL);
+    }
+    while (iter != NULL);
 
     return 0;
 }
 
 static void _list_dump_iter_func(
-    list_node *item,
+    list_node* item,
     int _index,
-    void *_user_arg
+    void* _user_arg
 ) {
-    printf("\"%s\", ", item->value);
+    printf("\"%s\", ", (char *)item->value);
 }
 
-void list_dump(list *lst) {
+void list_dump(list* lst) {
     printf("[ ");
     list_iter(lst, _list_dump_iter_func, NULL);
     printf(" ]\n");
 }
 
 static void _list_destroy_iter_func(
-    list_node *item,
+    list_node* item,
     int _index,
-    void *_user_arg
+    void* _user_arg
 ) {
     free(item);
 }
 
-int list_destroy(list *lst) {
+int list_destroy(list* lst) {
     list_iter(lst, _list_destroy_iter_func, NULL);
 
     lst->size = 0;

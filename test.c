@@ -1,17 +1,19 @@
 #include <CUnit/Basic.h>
 
 #include "tests/list_test.h"
+#include "tests/murmur3_test.h"
 #include "tests/hash_table_test.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     // Initialize the CUnit test registry
     if (CU_initialize_registry() != CUE_SUCCESS) {
         return CU_get_error();
     }
 
     CU_SuiteInfo suites[] = {
-        { "list", NULL, NULL, NULL, NULL, get_list_tests() },
-        { "hash_table", NULL, NULL, NULL, NULL, get_hash_table_tests() },
+        {"list", NULL, NULL, NULL, NULL, get_list_tests()},
+        {"murmur3", NULL, NULL, NULL, NULL, get_murmur3_tests()},
+        {"hash_table", NULL, NULL, NULL, NULL, get_hash_table_tests()},
         CU_SUITE_INFO_NULL,
     };
 

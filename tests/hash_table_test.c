@@ -1,17 +1,17 @@
 #include "hash_table_test.h"
 #include "../utils/hash_table.h"
 
-CU_TestInfo *get_hash_table_tests() {
+CU_TestInfo* get_hash_table_tests() {
     static CU_TestInfo tests[] = {
-        { "test_hash_table_init_and_destroy", test_hash_table_init_and_destroy },
-        { "test_hash_table_get_and_set", test_hash_table_get_and_set },
-        { "test_hash_table_set_entry", test_hash_table_set_entry },
-        { "test_hash_table_del", test_hash_table_del },
-        { "test_hash_table_keys", test_hash_table_keys },
-        { "test_hash_table_values", test_hash_table_values },
-        { "test_hash_table_has_no_duplicates", test_hash_table_has_no_duplicates },
-        { "test_hash_table_iter", test_hash_table_iter },
-        { "test_hash_table_size", test_hash_table_size },
+        {"test_hash_table_init_and_destroy", test_hash_table_init_and_destroy},
+        {"test_hash_table_get_and_set", test_hash_table_get_and_set},
+        {"test_hash_table_set_entry", test_hash_table_set_entry},
+        {"test_hash_table_del", test_hash_table_del},
+        {"test_hash_table_keys", test_hash_table_keys},
+        {"test_hash_table_values", test_hash_table_values},
+        {"test_hash_table_has_no_duplicates", test_hash_table_has_no_duplicates},
+        {"test_hash_table_iter", test_hash_table_iter},
+        {"test_hash_table_size", test_hash_table_size},
         CU_TEST_INFO_NULL,
     };
 
@@ -65,7 +65,7 @@ void test_hash_table_set_entry() {
     int value = 6;
     int ret;
 
-    hash_table_entry *entry = ht_init_entry(&key, sizeof(int), &value, sizeof(int));
+    hash_table_entry* entry = ht_init_entry(&key, sizeof(int), &value, sizeof(int));
     CU_ASSERT_PTR_NOT_NULL_FATAL(entry)
     CU_ASSERT_EQUAL(*((int *)entry->key), key)
     CU_ASSERT_EQUAL(*((int *)entry->value), value)
@@ -100,7 +100,7 @@ void test_hash_table_del() {
 void test_hash_table_keys() {
     int ret;
     hash_table ht;
-    char *keys[5];
+    char* keys[5];
     memset(keys, 0, sizeof(keys));
 
     ht_init(&ht, 50, NULL, NULL);
@@ -115,9 +115,9 @@ void test_hash_table_keys() {
 
     ret = ht_keys(&ht, (void **)keys);
     CU_ASSERT_EQUAL(ret, 3)
-    CU_ASSERT_STRING_EQUAL(keys[0], "spangle")
-    CU_ASSERT_STRING_EQUAL(keys[1], "bar")
-    CU_ASSERT_STRING_EQUAL(keys[2], "foo")
+    CU_ASSERT_STRING_EQUAL(keys[0], "bar")
+    CU_ASSERT_STRING_EQUAL(keys[1], "foo")
+    CU_ASSERT_STRING_EQUAL(keys[2], "spangle")
     CU_ASSERT_PTR_NULL(keys[3])
 
     ht_destroy(&ht);
@@ -126,7 +126,7 @@ void test_hash_table_keys() {
 void test_hash_table_values() {
     int ret;
     hash_table ht;
-    char *values[5];
+    char* values[5];
     memset(values, 0, sizeof(values));
 
     ht_init(&ht, 50, NULL, NULL);
@@ -141,9 +141,9 @@ void test_hash_table_values() {
 
     ret = ht_values(&ht, (void **)values);
     CU_ASSERT_EQUAL(ret, 3)
-    CU_ASSERT_STRING_EQUAL(values[0], "three")
-    CU_ASSERT_STRING_EQUAL(values[1], "two")
-    CU_ASSERT_STRING_EQUAL(values[2], "one")
+    CU_ASSERT_STRING_EQUAL(values[0], "two")
+    CU_ASSERT_STRING_EQUAL(values[1], "one")
+    CU_ASSERT_STRING_EQUAL(values[2], "three")
     CU_ASSERT_PTR_NULL(values[3])
 
     ht_destroy(&ht);
@@ -151,7 +151,7 @@ void test_hash_table_values() {
 
 void test_hash_table_has_no_duplicates() {
     int ret;
-    void *keys[2];
+    void* keys[2];
     hash_table ht;
 
     ht_init(&ht, 100, NULL, NULL);
@@ -167,7 +167,7 @@ void test_hash_table_has_no_duplicates() {
     ht_destroy(&ht);
 }
 
-static void test_hash_table_iter_func(hash_table_entry *entry, int index, void *result) {
+static void test_hash_table_iter_func(hash_table_entry* entry, int index, void* result) {
     strcat(result, entry->key);
     strcat(result, entry->value);
 }
