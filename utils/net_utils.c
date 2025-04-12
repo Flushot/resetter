@@ -4,7 +4,7 @@
 #include "../context.h"
 #include "net_utils.h"
 
-char *ether_ntoa(uint8_t *ether_addr) {
+char* ether_ntoa(const uint8_t* ether_addr) {
     static char addr_buf[18];
     addr_buf[17] = 0;
 
@@ -21,17 +21,17 @@ char *ether_ntoa(uint8_t *ether_addr) {
 }
 
 void maybe_print_libnet_stats(
-    resetter_context_t *ctx,
-    char *packet_type
+    resetter_context_t* ctx,
+    char* packet_type
 ) {
-    u_long curr_time;
     struct libnet_stats stat;
 
     // Occasionally report packet sent/errors stats
-    curr_time = (u_long)time(0);
+    u_long curr_time = time(0);
     if (ctx->libnet_last_stats_at == 0) {
         ctx->libnet_last_stats_at = curr_time;
-    } else if (curr_time - ctx->libnet_last_stats_at > 10) {
+    }
+    else if (curr_time - ctx->libnet_last_stats_at > 10) {
         libnet_stats(ctx->libnet, &stat);
         printf("%s packets sent:  %" PRId64 " (%" PRId64 " bytes)\n"
                "%s packet errors: %" PRId64 "\n",

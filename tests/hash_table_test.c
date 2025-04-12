@@ -167,7 +167,7 @@ void test_hash_table_has_no_duplicates() {
     ht_destroy(&ht);
 }
 
-static void test_hash_table_iter_func(hash_table_entry* entry, int index, void* result) {
+static void test_hash_table_iter_func(const hash_table_entry* entry, int index, void* result) {
     strcat(result, entry->key);
     strcat(result, entry->value);
 }

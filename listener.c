@@ -1,19 +1,19 @@
 #include "listener.h"
 
 typedef struct _packet_capture_args {
-    resetter_context_t *ctx;
+    resetter_context_t* ctx;
     listener_callback callback;
 } packet_capture_args;
 
 static void _on_packet_captured(
-        u_char *user_args,
-        const struct pcap_pkthdr *cap_header,
-        const u_char *packet) {
-    packet_capture_args *args = (packet_capture_args *)user_args;
+    u_char* user_args,
+    const struct pcap_pkthdr* cap_header,
+    const u_char* packet) {
+    packet_capture_args* args = (packet_capture_args *)user_args;
     (*args->callback)(args->ctx, cap_header, packet);
 }
 
-static int _listener_init(resetter_context_t *ctx) {
+static int _listener_init(resetter_context_t* ctx) {
     const int snapshot_length = 2048;
     const int promiscuous = 1; // Promiscuous mode
     const int timeout = 1; // Packet buffer timeout https://www.tcpdump.org/manpages/pcap.3pcap.html
@@ -33,7 +33,7 @@ static int _listener_init(resetter_context_t *ctx) {
     return 0;
 }
 
-static int _set_pcap_filter(resetter_context_t *ctx) {
+static int _set_pcap_filter(resetter_context_t* ctx) {
     struct bpf_program filter;
 
     // Compile BPF filter
@@ -51,11 +51,11 @@ static int _set_pcap_filter(resetter_context_t *ctx) {
     return 0;
 }
 
-int is_listener_started(resetter_context_t *ctx) {
+int is_listener_started(resetter_context_t* ctx) {
     return ctx->pcap != NULL;
 }
 
-int listener_start(resetter_context_t *ctx, listener_callback callback) {
+int listener_start(resetter_context_t* ctx, listener_callback callback) {
     packet_capture_args args;
 
     if (_listener_init(ctx) != 0) {
@@ -75,7 +75,7 @@ int listener_start(resetter_context_t *ctx, listener_callback callback) {
     return 0;
 }
 
-void listener_stop(resetter_context_t *ctx) {
+void listener_stop(resetter_context_t* ctx) {
     if (ctx->pcap != NULL) {
         pcap_breakloop(ctx->pcap);
 

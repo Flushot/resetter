@@ -20,14 +20,14 @@ typedef struct _thread_node {
     /**
      *
      */
-    struct _thread_node *next;
+    struct _thread_node* next;
 } thread_node;
 
 /**
  *
  * @param thread
  */
-void thmgr_append_thread(thread_node *thread);
+void thmgr_append_thread(thread_node* thread);
 
 /**
  *

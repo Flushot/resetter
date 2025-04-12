@@ -4,28 +4,28 @@
 #include "resetter.h"
 #include "thread_mgr.h"
 
+
 extern void testfunc();
 
-static char *_detect_device();
+static char* _detect_device();
 
 static void _on_signal_trapped(int);
 
-static void _usage(char **argv) {
+static void _usage(char** argv) {
     printf("usage: %s [-ahip] [target_ip]\n"
            "  -a           enable arp mitm\n"
            "  -h           help\n"
-           "  -i <iface>   interface to use"
+           "  -i <iface>   interface to use\n"
            "  -p <port>    target port\n",
            argv[0]);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int flag;
-    char *target_ip = NULL;
+    char* target_ip = NULL;
     uint16_t target_port = 0;
     int arp_mitm = 0;
-    char *device = NULL;
-    char **argv_remaining;
+    char* device = NULL;
 
     printf("resetter (c)2019 Chris Lyon\n\n");
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     }
 
     // Remaining positional args
-    argv_remaining = &argv[optind];
+    char** argv_remaining = &argv[optind];
     target_ip = argv_remaining[0];
 
     signal(SIGINT, _on_signal_trapped); // ^C
@@ -97,9 +97,9 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-static char *_detect_device() {
+static char* _detect_device() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    char *device = pcap_lookupdev(errbuf);
+    char* device = pcap_lookupdev(errbuf);
 
     if (device == NULL) {
         fprintf(stderr, "pcap_lookupdev() failed: %s\n", errbuf);

@@ -1,11 +1,11 @@
 #include "list_test.h"
 #include "../utils/list.h"
 
-CU_TestInfo *get_list_tests() {
+CU_TestInfo* get_list_tests() {
     static CU_TestInfo tests[] = {
-        { "test_list_init_and_destroy", test_list_init_and_destroy },
-        { "test_list", test_list },
-        { "test_list_iter", test_list_iter },
+        {"test_list_init_and_destroy", test_list_init_and_destroy},
+        {"test_list", test_list},
+        {"test_list_iter", test_list_iter},
         CU_TEST_INFO_NULL,
     };
 
@@ -72,7 +72,7 @@ void test_list() {
     list_destroy(&lst);
 }
 
-static void _test_list_iter_func(list_node *item, int index, void *result) {
+static void _test_list_iter_func(const list_node* item, size_t index, void* result) {
     strcat(result, item->value);
 }
 

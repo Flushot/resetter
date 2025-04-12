@@ -12,7 +12,7 @@ typedef struct _list_node {
     /**
      * Value of node.
      */
-    void *value;
+    void* value;
 
     /**
      * Pointers to previous and next entries in list.
@@ -27,7 +27,7 @@ typedef struct _list {
     /**
      * First node in list.
      */
-    list_node *head;
+    list_node* head;
 
     /**
      * Number of items in list.
@@ -41,7 +41,7 @@ typedef struct _list {
  * @param lst list.
  * @return 0 on success, -1 on failure.
  */
-int list_init(list *lst);
+int list_init(list* lst);
 
 /**
  *
@@ -50,7 +50,7 @@ int list_init(list *lst);
  * @param pos
  * @return 0 on success, -1 on failure.
  */
-int list_insert_at(list *lst, void *value, int pos);
+int list_insert_at(list* lst, void* value, size_t pos);
 
 /**
  *
@@ -58,7 +58,7 @@ int list_insert_at(list *lst, void *value, int pos);
  * @param pos
  * @return
  */
-void *list_get_at(list *lst, int pos);
+void* list_get_at(const list* lst, size_t pos);
 
 /**
  *
@@ -66,14 +66,14 @@ void *list_get_at(list *lst, int pos);
  * @param value
  * @return 0 on success, -1 on failure.
  */
-int list_shift(list *lst, void *value);
+int list_shift(list* lst, void* value);
 
 /**
  *
  * @param lst list.
  * @return
  */
-void *list_unshift(list *lst);
+void* list_unshift(list* lst);
 
 /**
  *
@@ -81,28 +81,28 @@ void *list_unshift(list *lst);
  * @param value
  * @return 0 on success, -1 on failure.
  */
-int list_push(list *lst, void *value);
+int list_push(list* lst, void* value);
 
 /**
  *
  * @param lst list.
  * @return
  */
-list_node *list_tail_node(list *lst);
+list_node* list_tail_node(const list* lst);
 
 /**
  *
  * @param lst list.
  * @return
  */
-void *list_tail(list *lst);
+void* list_tail(const list* lst);
 
 /**
  *
  * @param lst list.
  * @return
  */
-void *list_pop(list *lst);
+void* list_pop(list* lst);
 
 /**
  *
@@ -110,15 +110,15 @@ void *list_pop(list *lst);
  * @param pos
  * @return 0 on success, -1 on failure.
  */
-int list_del_at(list *lst, int pos);
+int list_del_at(list* lst, size_t pos);
 
 /**
  *
  */
 typedef void (*list_iter_func)(
-    list_node *lst,
-    int index,
-    void *user_arg
+    const list_node* lst,
+    size_t index,
+    void* user_arg
 );
 
 /**
@@ -130,9 +130,9 @@ typedef void (*list_iter_func)(
  * @return 0 on success, -1 on failure.
  */
 int list_iter(
-    list *lst,
+    const list* lst,
     list_iter_func iter_func,
-    void *iter_func_user_arg
+    void* iter_func_user_arg
 );
 
 /**
@@ -141,7 +141,7 @@ int list_iter(
  *
  * @param lst list.
  */
-void list_dump(list *lst);
+void list_dump(const list* lst);
 
 /**
  * Destroy list.
@@ -149,6 +149,6 @@ void list_dump(list *lst);
  * @param lst list.
  * @return 0 on success, -1 on failure.
  */
-int list_destroy(list *lst);
+int list_destroy(list* lst);
 
 #endif

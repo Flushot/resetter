@@ -12,9 +12,9 @@
  * @return
  */
 int send_arp_reply_packet(
-    resetter_context_t *ctx,
+    resetter_context_t* ctx,
     struct sockaddr_in addr,
-    uint8_t *victim_eth_addr
+    const uint8_t* victim_eth_addr
 );
 
 /**
@@ -24,7 +24,7 @@ int send_arp_reply_packet(
  * @return
  */
 int send_arp_request_packet(
-    resetter_context_t *ctx,
+    resetter_context_t* ctx,
     struct sockaddr_in addr
 );
 
@@ -34,6 +34,6 @@ int send_arp_request_packet(
  * @param device
  * @return
  */
-int start_arp_mitm_thread(thread_node *thread, char *device);
+int start_arp_mitm_thread(thread_node* thread, char* device);
 
 #endif

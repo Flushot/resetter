@@ -7,7 +7,7 @@
  * @param ether_addr ethernet address.
  * @return human-readable string.
  */
-char *ether_ntoa(uint8_t *ether_addr);
+char* ether_ntoa(const uint8_t* ether_addr);
 
 /**
  *
@@ -15,8 +15,8 @@ char *ether_ntoa(uint8_t *ether_addr);
  * @param packet_type
  */
 void maybe_print_libnet_stats(
-    resetter_context_t *ctx,
-    char *packet_type
+    resetter_context_t* ctx,
+    char* packet_type
 );
 
 #endif

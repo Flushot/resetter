@@ -22,7 +22,7 @@ typedef struct _resetter_context_t {
      *
      * If blank on startup, this will be automatically detected.
      */
-    char *device;
+    char* device;
 
     /**
      * [Optional] Target IP address to block.
@@ -39,7 +39,7 @@ typedef struct _resetter_context_t {
     /**
      * pcap: handle.
      */
-    pcap_t *pcap;
+    pcap_t* pcap;
 
     /**
      * pcap: BPF filter string.
@@ -55,12 +55,12 @@ typedef struct _resetter_context_t {
      * Poisoned ARP table: IP -> original MAC address.
      * Also used for unpoisoning.
      */
-    hash_table *arp_table;
+    hash_table* arp_table;
 
     /**
      * libnet: handle.
      */
-    libnet_t *libnet;
+    libnet_t* libnet;
 
     /**
      * libnet: Last time stats were printed to the console.
@@ -70,7 +70,7 @@ typedef struct _resetter_context_t {
     /**
      * Cleanup function to call before program is terminated.
      */
-    void (*cleanup)(struct _resetter_context_t *);
+    void (*cleanup)(struct _resetter_context_t*);
 } resetter_context_t;
 
 #endif

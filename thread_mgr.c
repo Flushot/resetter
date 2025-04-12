@@ -1,28 +1,30 @@
 #include "thread_mgr.h"
 #include "listener.h"
 
-static thread_node *thread_list = NULL;
+static thread_node* thread_list = NULL;
 
-void thmgr_append_thread(thread_node *thread) {
+void thmgr_append_thread(thread_node* thread) {
     thread->next = NULL;
 
     if (thread_list == NULL) {
         thread_list = thread;
-    } else {
-        thread_node *list = thread_list;
-        thread_node *tail;
+    }
+    else {
+        thread_node* list = thread_list;
+        thread_node* tail;
 
         do {
             tail = list;
-        } while (list->next != NULL);
+        }
+        while (list->next != NULL);
 
         tail->next = thread;
     }
 }
 
 void thmgr_wait_for_threads() {
-    thread_node *list = thread_list;
-    thread_node *thread;
+    thread_node* list = thread_list;
+    thread_node* thread;
 
     while ((thread = list) != NULL) {
         pthread_join(thread->thread_id, NULL);
@@ -31,10 +33,10 @@ void thmgr_wait_for_threads() {
 }
 
 void thmgr_cleanup() {
-    thread_node *thread;
+    thread_node* thread;
 
     while ((thread = thread_list) != NULL) {
-        resetter_context_t *ctx = &thread->ctx;
+        resetter_context_t* ctx = &thread->ctx;
 
         if (ctx->cleanup) {
             (*ctx->cleanup)(ctx);

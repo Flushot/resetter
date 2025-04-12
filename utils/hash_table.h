@@ -16,12 +16,12 @@ typedef struct _hash_table_entry {
     /**
      * Pointer to key.
      */
-    void *key;
+    void* key;
 
     /**
      * Pointer to value.
      */
-    void *value;
+    void* value;
 
     /**
      * If set to 1, then ht_destroy_entry() will automatically
@@ -33,12 +33,12 @@ typedef struct _hash_table_entry {
 /**
  * Key comparator function.
  */
-typedef int (*key_cmp_func)(void *key_a, void *key_b);
+typedef int (*key_cmp_func)(const void* key_a, const void* key_b);
 
 /**
  * Key hash function.
  */
-typedef uint32_t (*key_hash_func)(void *key, size_t ht_size);
+typedef uint32_t (*key_hash_func)(const void* key, size_t ht_size);
 
 /**
  * Hash table.
@@ -54,7 +54,7 @@ typedef struct _hash_table {
      * Hash table index.
      * Pointers to linked lists of entries.
      */
-    list **index;
+    list** index;
 
     /**
      * Key comparator function.
@@ -79,7 +79,7 @@ typedef struct _hash_table {
  * @return 0 on success, -1 on failure.
  */
 int ht_init(
-    hash_table *ht,
+    hash_table* ht,
     uint32_t size,
     key_cmp_func key_cmp,
     key_hash_func key_hash
@@ -94,10 +94,10 @@ int ht_init(
  * @param value_size size of value.
  * @return hash table entry (must ht_destroy_entry() on this when finished with it).
  */
-hash_table_entry *ht_init_entry(
-    void *key,
+hash_table_entry* ht_init_entry(
+    const void* key,
     size_t key_size,
-    void *value,
+    const void* value,
     size_t value_size
 );
 
@@ -107,7 +107,7 @@ hash_table_entry *ht_init_entry(
  * @param entry hash table entry.
  * @return 0 on success, -1 on failure.
  */
-int ht_destroy_entry(hash_table_entry *entry);
+int ht_destroy_entry(const hash_table_entry* entry);
 
 /**
  * Set value in hash table.
@@ -117,7 +117,7 @@ int ht_destroy_entry(hash_table_entry *entry);
  * @param value pointer to value.
  * @return 0 on success, -1 on failure.
  */
-int ht_set(hash_table *ht, void *key, void *value);
+int ht_set(const hash_table* ht, void* key, void* value);
 
 /**
  *
@@ -125,7 +125,7 @@ int ht_set(hash_table *ht, void *key, void *value);
  * @param entry
  * @return 0 on success, -1 on failure.
  */
-int ht_set_entry(hash_table *ht, hash_table_entry *entry);
+int ht_set_entry(const hash_table* ht, hash_table_entry* entry);
 
 /**
  * Get value from hash table.
@@ -134,7 +134,7 @@ int ht_set_entry(hash_table *ht, hash_table_entry *entry);
  * @param key entry key to get value for.
  * @return value pointer.
  */
-void *ht_get(hash_table *ht, void *key);
+void* ht_get(const hash_table* ht, const void* key);
 
 /**
  * Delete entry from hash table.
@@ -143,7 +143,7 @@ void *ht_get(hash_table *ht, void *key);
  * @param key entry key to delete.
  * @return 0 on success, -1 on failure.
  */
-int ht_del(hash_table *ht, void *key);
+int ht_del(const hash_table* ht, const void* key);
 
 /**
  * Destroy hash table.
@@ -151,15 +151,15 @@ int ht_del(hash_table *ht, void *key);
  * @param ht hash table.
  * @return 0 on success, -1 on failure.
  */
-int ht_destroy(hash_table *ht);
+int ht_destroy(hash_table* ht);
 
 /**
  *
  */
 typedef void (*ht_iter_func)(
-    hash_table_entry *entry,
+    const hash_table_entry* entry,
     int index,
-    void *user_arg
+    void* user_arg
 );
 
 /**
@@ -171,9 +171,9 @@ typedef void (*ht_iter_func)(
  * @return 0 on success, -1 on failure.
  */
 int ht_iter(
-    hash_table *ht,
+    const hash_table* ht,
     ht_iter_func iter_func,
-    void *iter_func_user_arg
+    void* iter_func_user_arg
 );
 
 /**
@@ -182,7 +182,7 @@ int ht_iter(
  *
  * @param ht hash table.
  */
-void ht_dump(hash_table *ht);
+void ht_dump(const hash_table* ht);
 
 /**
  * Get all keys in hash table.
@@ -191,7 +191,7 @@ void ht_dump(hash_table *ht);
  * @param keys pointer to array to store key pointers in.
  * @return number of keys.
  */
-int ht_keys(hash_table *ht, void **keys);
+int ht_keys(const hash_table* ht, void** keys);
 
 /**
  * Get all values in hash table.
@@ -200,7 +200,7 @@ int ht_keys(hash_table *ht, void **keys);
  * @param values pointer to array to store value pointers in.
  * @return number of values.
  */
-int ht_values(hash_table *ht, void **values);
+int ht_values(const hash_table* ht, void** values);
 
 /**
  * Get number of entries in hash table.
@@ -208,6 +208,6 @@ int ht_values(hash_table *ht, void **values);
  * @param ht hash table.
  * @return number of entries.
  */
-int ht_size(hash_table *ht);
+int ht_size(const hash_table* ht);
 
 #endif
