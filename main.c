@@ -98,12 +98,24 @@ int main(int argc, char** argv) {
 
 static char* detect_device() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    char* device = pcap_lookupdev(errbuf);
-
-    if (device == NULL) {
-        fprintf(stderr, "pcap_lookupdev() failed: %s\n", errbuf);
+    pcap_if_t* alldevs;
+    if (pcap_findalldevs(&alldevs, errbuf) == -1) {
+        fprintf(stderr, "detect_device: pcap_findalldevs() failed: %s\n", errbuf);
         return NULL;
     }
+
+    if (alldevs == NULL) {
+        fprintf(stderr, "detect_device: no network devices found\n");
+    }
+
+    char* device = strdup(alldevs->name);
+    if (device == NULL) {
+        fprintf(stderr, "detect_device: memory allocation failed\n");
+        pcap_freealldevs(alldevs);
+        return NULL;
+    }
+
+    pcap_freealldevs(alldevs);
 
     return device;
 }

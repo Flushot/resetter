@@ -266,7 +266,7 @@ static void dump_iter_func(
     const size_t index,
     void* _user_arg
 ) {
-    printf("%d: { \"%s\" => \"%s\" }\n", index, (char *)entry->key, (char *)entry->value);
+    printf("%zu: { \"%s\" => \"%s\" }\n", index, (char *)entry->key, (char *)entry->value);
 }
 
 void ht_dump(const hash_table* ht) {

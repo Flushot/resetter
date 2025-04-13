@@ -31,7 +31,7 @@ static void on_arp_packet_captured(
 static void cleanup(resetter_context* ctx);
 
 static int init_libnet(resetter_context* ctx) {
-    int injection_type = LIBNET_LINK; // Layer 2 (link)
+    const int injection_type = LIBNET_LINK; // Layer 2 (link)
     char errbuf[LIBNET_ERRBUF_SIZE];
 
     ctx->libnet = libnet_init(injection_type, ctx->device, errbuf);
@@ -50,7 +50,7 @@ static int init_libnet(resetter_context* ctx) {
 }
 
 static void* arp_mitm_thread(void* vargp) {
-    thread_node* thread = (thread_node *)vargp;
+    thread_node* thread = vargp;
     resetter_context* ctx = &thread->ctx;
 
     if (listener_start(ctx, on_arp_packet_captured) != 0) {
@@ -112,7 +112,7 @@ int start_arp_mitm_thread(thread_node* thread, char* device) {
         return -1;
     }
 
-    if (pthread_create(&thread->thread_id, NULL, arp_mitm_thread, (void *)thread) != 0) {
+    if (pthread_create(&thread->thread_id, NULL, arp_mitm_thread, thread) != 0) {
         perror("pthread_create() failed");
         return -1;
     }
@@ -124,7 +124,7 @@ int start_arp_mitm_thread(thread_node* thread, char* device) {
 
 static void unpoison_arp_table_entry(
     const hash_table_entry* entry,
-    const size_t index,
+    const size_t _index,
     void* user_arg
 ) {
     resetter_context* ctx = (resetter_context *)user_arg;
@@ -175,10 +175,10 @@ static struct libnet_ether_addr* get_local_mac_addr(const resetter_context* ctx)
 
 int send_arp_reply_packet(
     resetter_context* ctx,
-    struct sockaddr_in ip_addr,
+    struct sockaddr_in addr,
     const uint8_t* victim_eth_addr
 ) {
-    uint8_t* ip_src = (uint8_t *)&ip_addr.sin_addr.s_addr;
+    const uint8_t* ip_src = (uint8_t *)&addr.sin_addr.s_addr;
     static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
     struct libnet_ether_addr* local_mac_addr = get_local_mac_addr(ctx);
@@ -187,10 +187,10 @@ int send_arp_reply_packet(
         return -1;
     }
 
-    uint8_t* eth_src = local_mac_addr->ether_addr_octet;
+    const uint8_t* eth_src = local_mac_addr->ether_addr_octet;
     printf("Telling %s ", ether_ntoa(victim_eth_addr));
     printf("that %s is-at %s\n",
-           inet_ntoa(ip_addr.sin_addr),
+           inet_ntoa(addr.sin_addr),
            ether_ntoa(eth_src));
 
     // Build ARP packet
@@ -236,7 +236,7 @@ int send_arp_reply_packet(
     }
 
     // Write packet
-    int bytes_written = libnet_write(ctx->libnet);
+    const int bytes_written = libnet_write(ctx->libnet);
     if (bytes_written == -1) {
         fprintf(stderr, "Error writing ARP reply packet: %s\n",
                 libnet_geterror(ctx->libnet));
@@ -251,22 +251,22 @@ int send_arp_reply_packet(
     return 0;
 }
 
-int send_arp_request_packet(resetter_context* ctx, struct sockaddr_in ip_addr) {
+int send_arp_request_packet(resetter_context* ctx, struct sockaddr_in addr) {
     uint32_t local_ip = libnet_get_ipaddr4(ctx->libnet);
-    uint8_t* ip_src = (uint8_t *)&local_ip;
-    uint8_t* ip_dst = (uint8_t *)&ip_addr.sin_addr.s_addr;
+    const uint8_t* ip_src = (uint8_t *)&local_ip;
+    const uint8_t* ip_dst = (uint8_t *)&addr.sin_addr.s_addr;
     static libnet_ptag_t arp_tag = LIBNET_PTAG_INITIALIZER;
     static libnet_ptag_t eth_tag = LIBNET_PTAG_INITIALIZER;
     struct libnet_ether_addr* local_mac_addr = get_local_mac_addr(ctx);
 
-    printf("Broadcasting ARP who-has %s\n", inet_ntoa(ip_addr.sin_addr));
+    printf("Broadcasting ARP who-has %s\n", inet_ntoa(addr.sin_addr));
 
     if (local_mac_addr == NULL) {
         return -1;
     }
 
-    uint8_t* eth_src = local_mac_addr->ether_addr_octet;
-    uint8_t* eth_dst = BROADCAST_ETH_ADDR;
+    const uint8_t* eth_src = local_mac_addr->ether_addr_octet;
+    const uint8_t* eth_dst = BROADCAST_ETH_ADDR;
 
     // Build ARP packet
     arp_tag = libnet_build_arp(
@@ -311,7 +311,7 @@ int send_arp_request_packet(resetter_context* ctx, struct sockaddr_in ip_addr) {
     }
 
     // Write packet
-    int bytes_written = libnet_write(ctx->libnet);
+    const int bytes_written = libnet_write(ctx->libnet);
     if (bytes_written == -1) {
         fprintf(stderr, "Error writing ARP request packet: %s\n",
                 libnet_geterror(ctx->libnet));

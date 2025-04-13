@@ -9,7 +9,7 @@ static void on_packet_captured(
     u_char* user_args,
     const struct pcap_pkthdr* cap_header,
     const u_char* packet) {
-    packet_capture_args* args = (packet_capture_args *)user_args;
+    const packet_capture_args* args = (packet_capture_args *)user_args;
     (*args->callback)(args->ctx, cap_header, packet);
 }
 
@@ -76,11 +76,13 @@ int listener_start(resetter_context* ctx, const listener_callback callback) {
 }
 
 void listener_stop(resetter_context* ctx) {
-    if (ctx->pcap != NULL) {
-        pcap_breakloop(ctx->pcap);
-
-        // pcap must be closed before pcap_loop() is exited
-        pcap_close(ctx->pcap);
-        ctx->pcap = NULL;
+    if (ctx->pcap == NULL) {
+        return;
     }
+
+    pcap_breakloop(ctx->pcap);
+
+    // pcap must be closed before pcap_loop() is exited
+    pcap_close(ctx->pcap);
+    ctx->pcap = NULL;
 }
