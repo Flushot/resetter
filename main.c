@@ -64,6 +64,8 @@ int main(int argc, char** argv) {
     signal(SIGINT, on_signal_trapped); // ^C
     signal(SIGTERM, on_signal_trapped);
 
+    srand(time(NULL));
+
     // Detect interface if null
     if (device == NULL) {
         device = detect_device();

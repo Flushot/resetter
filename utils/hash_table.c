@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "hash_table.h"
 #include "murmur3.h"
-
-static uint32_t hash_seed = 0x00000000; // TODO: randomize
 
 struct ht_array_builder_arg {
     size_t index;
@@ -20,6 +19,11 @@ static int default_key_cmp(const void* key_a, const void* key_b) {
 }
 
 static uint32_t default_key_hash(const void* key, size_t ht_size) {
+    static uint32_t hash_seed = -1;
+    if (hash_seed == -1) {
+        hash_seed = rand();
+    }
+
     return murmur3(key, strlen(key), hash_seed) % (ht_size - 1);
 }
 

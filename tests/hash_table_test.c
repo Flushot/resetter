@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "hash_table_test.h"
 #include "../utils/hash_table.h"
 
@@ -98,7 +100,9 @@ void test_hash_table_del() {
 }
 
 void test_hash_table_keys() {
-    int ret;
+    srand(0);
+
+    size_t ret;
     hash_table ht;
     char* keys[5];
     memset(keys, 0, sizeof(keys));
@@ -116,15 +120,17 @@ void test_hash_table_keys() {
     ret = ht_keys(&ht, (void **)keys);
     CU_ASSERT_EQUAL(ret, 3)
     CU_ASSERT_STRING_EQUAL(keys[0], "bar")
-    CU_ASSERT_STRING_EQUAL(keys[1], "foo")
-    CU_ASSERT_STRING_EQUAL(keys[2], "spangle")
+    CU_ASSERT_STRING_EQUAL(keys[1], "spangle")
+    CU_ASSERT_STRING_EQUAL(keys[2], "foo")
     CU_ASSERT_PTR_NULL(keys[3])
 
     ht_destroy(&ht);
 }
 
 void test_hash_table_values() {
-    int ret;
+    srand(0);
+
+    size_t ret;
     hash_table ht;
     char* values[5];
     memset(values, 0, sizeof(values));
@@ -142,15 +148,15 @@ void test_hash_table_values() {
     ret = ht_values(&ht, (void **)values);
     CU_ASSERT_EQUAL(ret, 3)
     CU_ASSERT_STRING_EQUAL(values[0], "two")
-    CU_ASSERT_STRING_EQUAL(values[1], "one")
-    CU_ASSERT_STRING_EQUAL(values[2], "three")
+    CU_ASSERT_STRING_EQUAL(values[1], "three")
+    CU_ASSERT_STRING_EQUAL(values[2], "one")
     CU_ASSERT_PTR_NULL(values[3])
 
     ht_destroy(&ht);
 }
 
 void test_hash_table_has_no_duplicates() {
-    int ret;
+    size_t ret;
     void* keys[2];
     hash_table ht;
 
