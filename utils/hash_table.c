@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 #include "hash_table.h"
 #include "murmur3.h"
@@ -39,7 +38,7 @@ int ht_init(
     size_t index_size = size * sizeof(list);
     ht->index = malloc(index_size);
     if (ht->index == NULL) {
-        perror("malloc() failed");
+        perror("ht_init: malloc() failed");
         return -1;
     }
 
@@ -49,6 +48,40 @@ int ht_init(
 
     ht->key_cmp = key_cmp == NULL ? default_key_cmp : key_cmp;
     ht->key_hash = key_hash == NULL ? default_key_hash : key_hash;
+
+    return 0;
+}
+
+int ht_rehash(hash_table* ht, const uint32_t new_size) {
+    list** old_index = ht->index;
+    const size_t old_index_size = ht->index_size;
+
+    ht->index = malloc(new_size);
+    if (ht->index == NULL) {
+        perror("ht_rehash: malloc() failed");
+        return -1;
+    }
+
+    memset(ht->index, 0, new_size);
+    ht->index_size = new_size;
+
+    // Rebuild index
+    for (int i = 0; i < old_index_size; ++i) {
+        const list* p_list = old_index[i];
+        if (p_list != NULL) {
+            const list_node* p_iter = p_list->head;
+            if (p_iter != NULL) {
+                do {
+                    hash_table_entry* p_entry = p_iter->value;
+                    ht_set_entry(ht, p_entry);
+                    p_iter = p_iter->next;
+                }
+                while (p_iter != NULL);
+            }
+        }
+    }
+
+    free(old_index);
 
     return 0;
 }
@@ -248,9 +281,9 @@ int ht_iter(
     }
 
     for (int i = 0; i < ht->index_size; ++i) {
-        list* p_list = ht->index[i];
+        const list* p_list = ht->index[i];
         if (p_list != NULL) {
-            list_node* p_iter = p_list->head;
+            const list_node* p_iter = p_list->head;
             if (p_iter != NULL) {
                 do {
                     hash_table_entry* p_entry = p_iter->value;

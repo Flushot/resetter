@@ -6,6 +6,7 @@
 CU_TestInfo* get_hash_table_tests() {
     static CU_TestInfo tests[] = {
         {"test_hash_table_init_and_destroy", test_hash_table_init_and_destroy},
+        {"test_hash_table_rehash", test_hash_table_rehash},
         {"test_hash_table_get_and_set", test_hash_table_get_and_set},
         {"test_hash_table_set_entry", test_hash_table_set_entry},
         {"test_hash_table_del", test_hash_table_del},
@@ -35,6 +36,28 @@ void test_hash_table_init_and_destroy() {
     CU_ASSERT_EQUAL(ret, 0)
     CU_ASSERT_PTR_NULL(ht_get(&ht, "foo"))
     CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"))
+}
+
+void test_hash_table_rehash() {
+    int ret;
+    hash_table ht;
+
+    ret = ht_init(&ht, 2, NULL, NULL);
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_EQUAL(ht.index_size, 2)
+
+    ret = ht_set(&ht, "foo", "one");
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+
+    // Rehash
+    ret = ht_rehash(&ht, 3);
+    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_EQUAL(ht.index_size, 3)
+    CU_ASSERT_STRING_EQUAL(ht_get(&ht, "foo"), "one")
+
+    ret = ht_destroy(&ht);
+    CU_ASSERT_EQUAL(ret, 0)
 }
 
 void test_hash_table_get_and_set() {

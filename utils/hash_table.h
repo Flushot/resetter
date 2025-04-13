@@ -50,6 +50,9 @@ typedef struct hash_table {
      */
     size_t index_size;
 
+    /**
+     * Size of the total stored hash table entries
+     */
     size_t entry_size;
 
     /**
@@ -86,6 +89,15 @@ int ht_init(
     key_cmp_func key_cmp,
     key_hash_func key_hash
 );
+
+/**
+ * Resize and rebuild the hash table
+ *
+ * @param ht Hash table
+ * @param new_size New size of hash table index
+ * @return 0 on success, -1 on failure
+ */
+int ht_rehash(hash_table* ht, uint32_t new_size);
 
 /**
  * Initialize a new hash table entry by creating a copy of key/value
