@@ -20,9 +20,9 @@ set(
         listener.c
         resetter.c
         thread_mgr.c
-        utils/murmur3.c
         utils/hash_table.c
         utils/list.c
+        utils/murmur3.c
         utils/net_utils.c
 )
 
@@ -36,9 +36,10 @@ target_link_libraries(resetter resetter_shared) # Link main executable to shared
 add_executable(
         test
         test.c
-        tests/murmur3_test.c
         tests/hash_table_test.c
         tests/list_test.c
+        tests/murmur3_test.c
+        tests/net_utils_test.c
 )
 
 # libnet

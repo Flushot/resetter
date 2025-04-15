@@ -56,13 +56,14 @@ int ht_rehash(hash_table* ht, const uint32_t new_size) {
     list** old_index = ht->index;
     const size_t old_index_size = ht->index_size;
 
-    ht->index = malloc(new_size);
+    size_t index_size = new_size * sizeof(list);
+    ht->index = malloc(index_size);
     if (ht->index == NULL) {
         perror("ht_rehash: malloc() failed");
         return -1;
     }
 
-    memset(ht->index, 0, new_size);
+    memset(ht->index, 0, index_size);
     ht->index_size = new_size;
 
     // Rebuild index
@@ -92,7 +93,7 @@ hash_table_entry* ht_init_entry(
 ) {
     hash_table_entry* p_entry = malloc(sizeof(hash_table_entry));
     if (p_entry == NULL) {
-        perror("malloc() failed");
+        perror("ht_init_entry: malloc() failed for entry");
         return NULL;
     }
 
@@ -100,14 +101,14 @@ hash_table_entry* ht_init_entry(
 
     p_entry->key = malloc(key_size);
     if (p_entry->key == NULL) {
-        perror("malloc() failed");
+        perror("ht_init_entry: malloc() failed for key");
         free(p_entry);
         return NULL;
     }
 
     p_entry->value = malloc(value_size);
     if (p_entry->value == NULL) {
-        perror("malloc() failed");
+        perror("ht_init_entry: malloc() failed for value");
         free(p_entry->key);
         free(p_entry);
         return NULL;
@@ -130,7 +131,7 @@ int ht_destroy_entry(const hash_table_entry* entry) {
 int ht_set(hash_table* ht, void* key, void* value) {
     hash_table_entry* p_entry = malloc(sizeof(hash_table_entry));
     if (p_entry == NULL) {
-        perror("malloc() failed");
+        perror("ht_set: malloc() failed");
         return -1;
     }
 
@@ -143,11 +144,11 @@ int ht_set(hash_table* ht, void* key, void* value) {
 
 int ht_set_entry(hash_table* ht, hash_table_entry* entry) {
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized\n");
+        fprintf(stderr, "ht_set_entry: hash table not initialized\n");
         return -1;
     }
 
-    size_t index = find_index(ht, entry->key);
+    const size_t index = find_index(ht, entry->key);
     list* p_list = *(ht->index + index);
     if (p_list == NULL) {
         // First entry: Start a new linked list
@@ -181,7 +182,7 @@ int ht_set_entry(hash_table* ht, hash_table_entry* entry) {
 
 void* ht_get(const hash_table* ht, const void* key) {
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized\n");
+        fprintf(stderr, "ht_get: hash table not initialized\n");
         return NULL;
     }
 
@@ -209,7 +210,7 @@ void* ht_get(const hash_table* ht, const void* key) {
 
 int ht_del(hash_table* ht, const void* key) {
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized\n");
+        fprintf(stderr, "ht_del: hash table not initialized\n");
         return -1;
     }
 
@@ -223,7 +224,7 @@ int ht_del(hash_table* ht, const void* key) {
     int i = 0;
     size_t deleted_count = 0;
     list_node* p_curr = p_list->head;
-    do {
+    while (p_curr != NULL) {
         hash_table_entry* p_entry = p_curr->value;
         if ((*ht->key_cmp)(p_entry->key, key) == 0) {
             list_del_at(p_list, i);
@@ -234,8 +235,7 @@ int ht_del(hash_table* ht, const void* key) {
         }
 
         p_curr = p_curr->next;
-    }
-    while (p_curr != NULL);
+    };
 
     ht->entry_size -= deleted_count;
 
@@ -276,7 +276,7 @@ int ht_iter(
     void* iter_func_user_arg
 ) {
     if (ht->index == NULL) {
-        fprintf(stderr, "hash table not initialized\n");
+        fprintf(stderr, "ht_iter: hash table not initialized\n");
         return -1;
     }
 

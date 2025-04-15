@@ -9,14 +9,7 @@
  * Linked list node
  */
 typedef struct list_node {
-    /**
-     * Value of node
-     */
     void* value;
-
-    /**
-     * Pointers to previous and next entries in list
-     */
     struct list_node *prev, *next;
 } list_node;
 
@@ -24,14 +17,7 @@ typedef struct list_node {
  * List.
  */
 typedef struct list {
-    /**
-     * First node in list
-     */
     list_node *head, *tail;
-
-    /**
-     * Number of nodes in list
-     */
     size_t size;
 } list;
 
@@ -44,34 +30,35 @@ typedef struct list {
 int list_init(list* lst);
 
 /**
- * Insert item in list at position
+ * Insert value into list at position
  *
  * @param lst List
  * @param value Value to insert
  * @param pos Position to insert at
  * @return 0 on success, -1 on failure
  */
-int list_insert_at(list* lst, void* value, const size_t pos);
+int list_insert_at(list* lst, void* value, size_t pos);
 
 /**
- * Get item at position in list
+ * Get value at position in list
  *
  * @param lst List
  * @param pos Position to get item at
  * @return Value of item (or NULL it not found)
  */
-void* list_get_at(const list* lst, const size_t pos);
+void* list_get_at(const list* lst, size_t pos);
 
 /**
+ * Delete value at position in list
  *
  * @param lst List
  * @param pos Position to delete at
  * @return 0 on success, -1 on failure
  */
-int list_del_at(list* lst, const size_t pos);
+int list_del_at(list* lst, size_t pos);
 
 /**
- * Get first (head) item from list
+ * Get first (head) value from list
  *
  * @param lst List
  * @return Value of head (or NULL if empty)
@@ -88,7 +75,7 @@ void* list_head(const list* lst);
 int list_push_head(list* lst, void* value);
 
 /**
- * Pop item from head of list
+ * Pop value from head of list
  *
  * @param lst List
  * @return Value that was popped (or NULL if not found)
@@ -96,7 +83,7 @@ int list_push_head(list* lst, void* value);
 void* list_pop_head(list* lst);
 
 /**
- * Get last item in list
+ * Get last value in list
  *
  * @param lst List
  * @return Value of tail (or NULL if empty)
@@ -104,6 +91,7 @@ void* list_pop_head(list* lst);
 void* list_tail(const list* lst);
 
 /**
+ * Push value to tail of list (append)
  *
  * @param lst List
  * @param value Value
@@ -112,7 +100,7 @@ void* list_tail(const list* lst);
 int list_push_tail(list* lst, void* value);
 
 /**
- * Pop last (tail) item from list
+ * Pop last (tail) value from list
  *
  * @param lst List
  * @return Value from tail (or NULL if empty)

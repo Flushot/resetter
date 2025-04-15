@@ -13,14 +13,7 @@
  * Hash table entry.
  */
 typedef struct hash_table_entry {
-    /**
-     * Pointer to key
-     */
     void* key;
-
-    /**
-     * Pointer to value
-     */
     void* value;
 
     /**

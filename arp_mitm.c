@@ -135,7 +135,7 @@ static void unpoison_arp_table_entry(
 
     printf("Unpoisoning: %s -> %s\n",
            inet_ntoa(addr.sin_addr),
-           ether_ntoa((uint8_t *)entry->value));
+           net_utils_ether_ntoa((uint8_t *)entry->value));
 
     if (send_arp_reply_packet(ctx, addr, BROADCAST_ETH_ADDR) != 0) {
         fprintf(stderr, "Failed to unpoison!\n");
@@ -167,7 +167,7 @@ static struct libnet_ether_addr* get_local_mac_addr(const resetter_context* ctx)
         }
 
         printf("Local MAC address: %s\n",
-               ether_ntoa(local_mac_addr->ether_addr_octet));
+               net_utils_ether_ntoa(local_mac_addr->ether_addr_octet));
     }
 
     return local_mac_addr;
@@ -188,10 +188,10 @@ int send_arp_reply_packet(
     }
 
     const uint8_t* eth_src = local_mac_addr->ether_addr_octet;
-    printf("Telling %s ", ether_ntoa(victim_eth_addr));
+    printf("Telling %s ", net_utils_ether_ntoa(victim_eth_addr));
     printf("that %s is-at %s\n",
            inet_ntoa(addr.sin_addr),
-           ether_ntoa(eth_src));
+           net_utils_ether_ntoa(eth_src));
 
     // Build ARP packet
     arp_tag = libnet_build_arp(
@@ -360,20 +360,20 @@ static void on_arp_packet_captured(
     switch (htons(arp_hdr->ar_op)) {
         case ARPOP_REQUEST:
             // req to resolve address
-            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
-            printf("%s who-has %s ", ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
-            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), ether_ntoa(arp_payload->ar_sha));
+            printf("arp %s -> ", net_utils_ether_ntoa(eth_hdr->ether_shost));
+            printf("%s who-has %s ", net_utils_ether_ntoa(eth_hdr->ether_dhost), inet_ntoa(daddr.sin_addr));
+            printf("tell %s (%s)\n", inet_ntoa(saddr.sin_addr), net_utils_ether_ntoa(arp_payload->ar_sha));
 
         // TODO: if IP is in ctx->arp_table, send spoofed reply saying it's from this machine's MAC
             break;
 
         case ARPOP_REPLY:
             // resp to previous request
-            printf("arp %s -> ", ether_ntoa(eth_hdr->ether_shost));
+            printf("arp %s -> ", net_utils_ether_ntoa(eth_hdr->ether_shost));
             printf("%s reply %s is-at ",
-                   ether_ntoa(eth_hdr->ether_dhost),
+                   net_utils_ether_ntoa(eth_hdr->ether_dhost),
                    inet_ntoa(saddr.sin_addr));
-            printf("%s\n", ether_ntoa(arp_payload->ar_sha));
+            printf("%s\n", net_utils_ether_ntoa(arp_payload->ar_sha));
 
             if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
                 hash_table_entry* entry = ht_init_entry(

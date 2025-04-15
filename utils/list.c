@@ -11,8 +11,10 @@ static list_node* make_node(void* value) {
         return NULL;
     }
 
-    memset(item, 0, sizeof(list_node));
     item->value = value;
+    item->prev = NULL;
+    item->next = NULL;
+
     return item;
 }
 
@@ -240,8 +242,9 @@ int list_iter(
 
     int i = 0;
     do {
+        const list_node* p_next = p_node->next;
         iter_func(p_node, i++, iter_func_user_arg);
-        p_node = p_node->next;
+        p_node = p_next;
     }
     while (p_node != NULL);
 

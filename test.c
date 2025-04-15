@@ -3,6 +3,7 @@
 #include "tests/list_test.h"
 #include "tests/murmur3_test.h"
 #include "tests/hash_table_test.h"
+#include "tests/net_utils_test.h"
 
 int main(int argc, char** argv) {
     // Initialize the CUnit test registry
@@ -14,6 +15,7 @@ int main(int argc, char** argv) {
         {"list", NULL, NULL, NULL, NULL, get_list_tests()},
         {"murmur3", NULL, NULL, NULL, NULL, get_murmur3_tests()},
         {"hash_table", NULL, NULL, NULL, NULL, get_hash_table_tests()},
+        {"net_utils", NULL, NULL, NULL, NULL, get_net_utils_tests()},
         CU_SUITE_INFO_NULL,
     };
 
