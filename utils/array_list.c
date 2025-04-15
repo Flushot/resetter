@@ -66,7 +66,7 @@ static void shift_right(array_list* lst, size_t pos) {
 
 int array_list_insert_at(array_list* lst, void* value, const size_t pos) {
     if (pos > lst->size) {
-        fprintf(stderr, "array_list_insert_at: index %zu is out of bounds %zu", pos, lst->size);
+        fprintf(stderr, "array_list_insert_at: index %zu is out of bounds %zu\n", pos, lst->size);
         return -1;
     }
 

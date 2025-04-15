@@ -71,7 +71,7 @@ void test_net_utils_ip_matches() {
 }
 
 void test_net_utils_ether_ntoa() {
-    const uint8_t* input = "\xab\x57\xd8\x36\xda\x88";
+    const uint8_t* input = (uint8_t *)"\xab\x57\xd8\x36\xda\x88";
 
     const char* result = net_utils_ether_ntoa(input);
     CU_ASSERT_STRING_EQUAL(result, "ab:57:d8:36:da:88")
