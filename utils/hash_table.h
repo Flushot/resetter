@@ -10,7 +10,7 @@
 #include "list.h"
 
 /**
- * Hash table entry.
+ * Hash table entry
  */
 typedef struct hash_table_entry {
     void* key;
@@ -161,7 +161,11 @@ int ht_del(hash_table* ht, const void* key);
 int ht_destroy(hash_table* ht);
 
 /**
+ * Hash table iterator callback function
  *
+ * @param entry Iterated hash table entry
+ * @param index Iteration index
+ * @param user_arg Optional user arg
  */
 typedef void (*ht_iter_func)(
     const hash_table_entry* entry,

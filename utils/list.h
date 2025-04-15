@@ -2,10 +2,6 @@
 #define __LIST_H_DEFINED__
 
 /**
- * Doubly-linked list
- */
-
-/**
  * Linked list node
  */
 typedef struct list_node {
@@ -14,7 +10,7 @@ typedef struct list_node {
 } list_node;
 
 /**
- * List.
+ * Doubly-linked list
  */
 typedef struct list {
     list_node *head, *tail;
@@ -108,7 +104,11 @@ int list_push_tail(list* lst, void* value);
 void* list_pop_tail(list* lst);
 
 /**
+ * List iterator callback function
  *
+ * @param lst Iterated list node
+ * @param index Iteration index
+ * @param user_arg Optional user arg
  */
 typedef void (*list_iter_func)(
     const list_node* lst,
@@ -117,7 +117,7 @@ typedef void (*list_iter_func)(
 );
 
 /**
- * Iterate list items.
+ * Iterate list items
  *
  * @param lst List
  * @param iter_func Iterator callback function

@@ -4,19 +4,48 @@
 #include "hash_table.h"
 #include "murmur3.h"
 
+/**
+ * Array builder iterator user_arg
+ */
 struct ht_array_builder_arg {
     size_t index;
+
+    /**
+     * Array to store items in
+     */
     void** items;
 };
 
+/**
+ * Get hash table index pointer for given key
+ * Hashes the key then computes its index offset
+ *
+ * @param ht Hash table
+ * @param key Key to compute index for
+ * @return Computed index
+ */
 static size_t find_index(const hash_table* ht, const void* key) {
     return (*ht->key_hash)(key, ht->index_size) % (ht->index_size - 1);
 }
 
+/**
+ * Default key comparison function (strcmp)
+ *
+ * @param key_a Key A to compare
+ * @param key_b Key B to compare
+ * @return Same as strcmp()
+ */
 static int default_key_cmp(const void* key_a, const void* key_b) {
     return strcmp(key_a, key_b);
 }
 
+/**
+ * Default hashing function (murmur3)
+ *
+ * @param key Key to hash
+ * @param ht_size Size of hash table index
+ * @return Hash value
+ */
 static uint32_t default_key_hash(const void* key, size_t ht_size) {
     static uint32_t hash_seed = -1;
     if (hash_seed == -1) {
@@ -243,6 +272,13 @@ int ht_del(hash_table* ht, const void* key) {
     return deleted_count > 0 ? 0 : -1;
 }
 
+/**
+ * Iterator callback function that destroys all entries
+ *
+ * @param entry Iterated hash table entry
+ * @param _index Iteration index (ignored)
+ * @param _user_arg Ignored
+ */
 static void destroy_iter_func(
     const hash_table_entry* entry,
     const size_t _index,
@@ -298,6 +334,13 @@ int ht_iter(
     return 0;
 }
 
+/**
+ * Iterator callback function that prints the hash table to stdout
+ *
+ * @param entry Iterated hash table entry
+ * @param index Iteration index
+ * @param _user_arg Ignored
+ */
 static void dump_iter_func(
     const hash_table_entry* entry,
     const size_t index,
@@ -310,6 +353,13 @@ void ht_dump(const hash_table* ht) {
     ht_iter(ht, dump_iter_func, NULL);
 }
 
+/**
+ * Iterator callback function that builds an array of keys
+ *
+ * @param entry Iterated hash table entry
+ * @param _index Iteration index
+ * @param user_arg ht_array_builder_arg accumulator for iterated keys
+ */
 static void keys_iter_func(
     const hash_table_entry* entry,
     const size_t _index,
@@ -337,6 +387,13 @@ size_t ht_size(const hash_table* ht) {
     return ht->entry_size;
 }
 
+/**
+ * Iterator callback function that builds an array of values
+ *
+ * @param entry Iterated hash table entry
+ * @param _index Iteration index
+ * @param user_arg ht_array_builder_arg accumulator for iterated values
+ */
 static void ht_values_iter_func(
     const hash_table_entry* entry,
     const size_t _index,

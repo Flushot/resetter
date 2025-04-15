@@ -34,6 +34,12 @@ int array_list_init(array_list* lst, const size_t value_size, const size_t capac
     return 0;
 }
 
+/**
+ * Remove item at pos and shift items after it left
+ *
+ * @param lst List
+ * @param pos Position to remove
+ */
 static void shift_left(array_list* lst, size_t pos) {
     --lst->size;
 
@@ -42,6 +48,12 @@ static void shift_left(array_list* lst, size_t pos) {
     }
 }
 
+/**
+ * Remove item at pos and shift items before it right
+ *
+ * @param lst List
+ * @param pos Position to remove
+ */
 static void shift_right(array_list* lst, size_t pos) {
     if ((pos + 1) >= lst->capacity) {
         array_list_resize(lst, pos + 1);

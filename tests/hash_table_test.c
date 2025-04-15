@@ -34,6 +34,8 @@ void test_hash_table_init_and_destroy() {
 
     ret = ht_destroy(&ht);
     CU_ASSERT_EQUAL(ret, 0)
+
+    // Get non-existant values (will print warnings)
     CU_ASSERT_PTR_NULL(ht_get(&ht, "foo"))
     CU_ASSERT_PTR_NULL(ht_get(&ht, "bar"))
 }

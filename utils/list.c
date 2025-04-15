@@ -4,6 +4,12 @@
 
 #include "list.h"
 
+/**
+ * Create a new list node
+ *
+ * @param value Value of node
+ * @return List node
+ */
 static list_node* make_node(void* value) {
     list_node* item = malloc(sizeof(list_node));
     if (item == NULL) {
@@ -18,6 +24,16 @@ static list_node* make_node(void* value) {
     return item;
 }
 
+/**
+ * Find list node at a given position
+ *
+ * This needs to traverse the entire list, so it's not very efficient for
+ * large lists
+ *
+ * @param list List
+ * @param pos Position
+ * @return List node (or NULL if not found)
+ */
 static list_node* find_node_at(list_node* list, const size_t pos) {
     list_node* p_iter = list;
 
@@ -242,7 +258,7 @@ int list_iter(
 
     int i = 0;
     do {
-        const list_node* p_next = p_node->next;
+        list_node* p_next = p_node->next;
         iter_func(p_node, i++, iter_func_user_arg);
         p_node = p_next;
     }
@@ -251,6 +267,13 @@ int list_iter(
     return 0;
 }
 
+/**
+ * Iterator callback function that prints the list to stdout
+ *
+ * @param item Iterated list node
+ * @param _index Iteration index (ignored)
+ * @param _user_arg Ignored
+ */
 static void dump_iter_func(
     const list_node* item,
     size_t _index,
@@ -265,6 +288,13 @@ void list_dump(const list* lst) {
     printf(" ]\n");
 }
 
+/**
+ * Iterator callback function that destroys all list nodes
+ *
+ * @param item Iterated list node
+ * @param _index Iteration index
+ * @param _user_arg Ignored
+ */
 static void destroy_iter_func(
     const list_node* item,
     size_t _index,

@@ -25,7 +25,7 @@ char* net_utils_long2ip(uint32_t long_addr, char* ip_addr_out);
  * @param test_ip_addr IPv4 address to test
  * @param match_ip_addr Matching IPv4 address or network
  * @param net_bits Number of network bits to use when matching against match_ip_addr (0-32)
- * @return 1 if match, or 0 if no match
+ * @return 1 if match, 0 if no match
  */
 int net_utils_ip_matches(char* test_ip_addr, char* match_ip_addr, uint8_t net_bits);
 
