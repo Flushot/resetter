@@ -20,6 +20,7 @@ set(
         listener.c
         resetter.c
         thread_mgr.c
+        utils/array_list.c
         utils/hash_table.c
         utils/list.c
         utils/murmur3.c
