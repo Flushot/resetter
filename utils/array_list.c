@@ -10,13 +10,20 @@
  * @return 0 on success, -1 on failure
  */
 static int alloc_array(array_list* lst) {
-    void* new_array = malloc(lst->capacity * lst->value_size);
-    if (new_array == NULL) {
-        perror("alloc_array: malloc() failed");
-        return -1;
-    }
+    if (lst->array == NULL) {
+        // First allocation
+        void* new_array = malloc(lst->capacity * lst->value_size);
+        if (new_array == NULL) {
+            perror("alloc_array: malloc() failed");
+            return -1;
+        }
 
-    lst->array = new_array;
+        lst->array = new_array;
+    }
+    else {
+        // Subsequent allocation
+        lst->array = realloc(lst->array, lst->capacity * lst->value_size);
+    }
 
     return 0;
 }
@@ -34,7 +41,7 @@ int array_list_init(array_list* lst, const size_t value_size, const size_t capac
     return 0;
 }
 
-size_t array_list_index_of(array_list* lst, void* value) {
+size_t array_list_index_of(const array_list* lst, const void* value) {
     for (size_t i = 0; i < lst->size; ++i) {
         if (lst->array[i] == value) {
             return i;
@@ -114,7 +121,7 @@ void* array_list_del_at(array_list* lst, const size_t pos) {
     return value;
 }
 
-void* array_list_del_value(array_list* lst, void* value) {
+void* array_list_del_value(array_list* lst, const void* value) {
     size_t index = array_list_index_of(lst, value);
     if (index == -1) {
         return NULL;
@@ -147,21 +154,7 @@ void* array_list_pop_tail(array_list* lst) {
     return array_list_del_at(lst, lst->size - 1);
 }
 
-/**
- * Copy an array
- *
- * @param src Source array
- * @param dst Destination array
- * @param length Number of items to copy
- */
-static void copy_array(void** src, void** dst, const size_t length) {
-    for (size_t i = 0; i < length; ++i) {
-        dst[i] = src[i];
-    }
-}
-
 int array_list_resize(array_list* lst, const size_t capacity) {
-    void* old_array = lst->array;
     const size_t old_capacity = lst->capacity;
 
     if (capacity == lst->capacity) {
@@ -181,8 +174,6 @@ int array_list_resize(array_list* lst, const size_t capacity) {
         lst->capacity = old_capacity;
         return -1;
     }
-
-    copy_array(old_array, lst->array, lst->size);
 
     return 0;
 }

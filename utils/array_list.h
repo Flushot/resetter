@@ -25,7 +25,7 @@ int array_list_init(array_list* lst, size_t value_size, size_t capacity);
  * @param value Value to search
  * @return Index or -1 if not found
  */
-size_t array_list_index_of(array_list* lst, void* value);
+size_t array_list_index_of(const array_list* lst, const void* value);
 
 /**
  * Insert value into array list at position
@@ -62,7 +62,7 @@ void* array_list_del_at(array_list* lst, size_t pos);
  * @param value Value to delete
  * @return Deleted value (or NULL if not found)
  */
-void* array_list_del_value(array_list* lst, void* value);
+void* array_list_del_value(array_list* lst, const void* value);
 
 /**
  * Push value to head of array list (prepend)
