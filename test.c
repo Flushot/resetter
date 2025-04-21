@@ -1,4 +1,5 @@
 #include <CUnit/Basic.h>
+#include <stdlib.h>
 
 #include "tests/linked_list_test.h"
 #include "tests/murmur3_test.h"
@@ -25,6 +26,9 @@ int main(int argc, char** argv) {
         CU_cleanup_registry();
         return CU_get_error();
     }
+
+    // Setup
+    srand(0);
 
     // Run all tests using the CUnit Basic interface
     CU_basic_set_mode(CU_BRM_VERBOSE);

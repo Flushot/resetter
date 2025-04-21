@@ -108,8 +108,6 @@ void test_hash_table_del() {
 }
 
 void test_hash_table_keys() {
-    srand(0);
-
     hash_table ht;
     char* keys[5];
     memset(keys, 0, sizeof(keys));
@@ -133,8 +131,6 @@ void test_hash_table_keys() {
 }
 
 void test_hash_table_values() {
-    srand(0);
-
     hash_table ht;
     char* values[5];
     memset(values, 0, sizeof(values));
