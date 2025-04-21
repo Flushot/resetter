@@ -10,20 +10,23 @@
  * @return 0 on success, -1 on failure
  */
 static int alloc_array(array_list* lst) {
+    void* new_array;
+
     if (lst->array == NULL) {
         // First allocation
-        void* new_array = malloc(lst->capacity * lst->value_size);
-        if (new_array == NULL) {
-            perror("alloc_array: malloc() failed");
-            return -1;
-        }
-
-        lst->array = new_array;
+        new_array = malloc(lst->capacity * lst->value_size);
     }
     else {
         // Subsequent allocation
-        lst->array = realloc(lst->array, lst->capacity * lst->value_size);
+        new_array = realloc(lst->array, lst->capacity * lst->value_size);
     }
+
+    if (new_array == NULL) {
+        perror("alloc_array: malloc() failed");
+        return -1;
+    }
+
+    lst->array = new_array;
 
     return 0;
 }
