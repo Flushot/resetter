@@ -2,6 +2,7 @@
 
 #include "tests/list_test.h"
 #include "tests/murmur3_test.h"
+#include "tests/array_list_test.h"
 #include "tests/hash_table_test.h"
 #include "tests/net_utils_test.h"
 
@@ -14,6 +15,7 @@ int main(int argc, char** argv) {
     CU_SuiteInfo suites[] = {
         {"list", NULL, NULL, NULL, NULL, get_list_tests()},
         {"murmur3", NULL, NULL, NULL, NULL, get_murmur3_tests()},
+        {"array_list", NULL, NULL, NULL, NULL, get_array_list_tests()},
         {"hash_table", NULL, NULL, NULL, NULL, get_hash_table_tests()},
         {"net_utils", NULL, NULL, NULL, NULL, get_net_utils_tests()},
         CU_SUITE_INFO_NULL,

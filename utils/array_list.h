@@ -19,6 +19,15 @@ typedef struct array_list {
 int array_list_init(array_list* lst, size_t value_size, size_t capacity);
 
 /**
+ * Find index of value
+ *
+ * @param lst Array list
+ * @param value Value to search
+ * @return Index or -1 if not found
+ */
+size_t array_list_index_of(array_list* lst, void* value);
+
+/**
  * Insert value into array list at position
  *
  * @param lst Array list
@@ -45,6 +54,15 @@ void* array_list_get_at(const array_list* lst, size_t pos);
  * @return Value at position (or NULL if not found)
  */
 void* array_list_del_at(array_list* lst, size_t pos);
+
+/**
+ * Delete value from array list
+ *
+ * @param lst Array list
+ * @param value Value to delete
+ * @return Deleted value (or NULL if not found)
+ */
+void* array_list_del_value(array_list* lst, void* value);
 
 /**
  * Push value to head of array list (prepend)

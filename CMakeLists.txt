@@ -37,6 +37,7 @@ target_link_libraries(resetter resetter_shared) # Link main executable to shared
 add_executable(
         test
         test.c
+        tests/array_list_test.c
         tests/hash_table_test.c
         tests/list_test.c
         tests/murmur3_test.c

@@ -34,6 +34,16 @@ int array_list_init(array_list* lst, const size_t value_size, const size_t capac
     return 0;
 }
 
+size_t array_list_index_of(array_list* lst, void* value) {
+    for (size_t i = 0; i < lst->size; ++i) {
+        if (lst->array[i] == value) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 /**
  * Remove item at pos and shift items after it left
  *
@@ -102,6 +112,15 @@ void* array_list_del_at(array_list* lst, const size_t pos) {
     shift_left(lst, pos);
 
     return value;
+}
+
+void* array_list_del_value(array_list* lst, void* value) {
+    size_t index = array_list_index_of(lst, value);
+    if (index == -1) {
+        return NULL;
+    }
+
+    return array_list_del_at(lst, index);
 }
 
 int array_list_push_head(array_list* lst, void* value) {
