@@ -12,20 +12,17 @@ CU_TestInfo* get_array_list_tests() {
 }
 
 void test_array_list_init_and_destroy() {
-    int ret;
     array_list lst;
     const size_t value_size = sizeof(int);
     const size_t capacity = 3;
 
-    ret = array_list_init(&lst, value_size, capacity);
-    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_EQUAL(array_list_init(&lst, value_size, capacity), 0)
     CU_ASSERT_PTR_NOT_NULL(lst.array)
     CU_ASSERT_EQUAL(lst.size, 0)
     CU_ASSERT_EQUAL(lst.value_size, value_size)
     CU_ASSERT_EQUAL(lst.capacity, capacity)
 
-    ret = array_list_destroy(&lst);
-    CU_ASSERT_EQUAL(ret, 0)
+    CU_ASSERT_EQUAL(array_list_destroy(&lst), 0)
     CU_ASSERT_PTR_NULL(lst.array)
     CU_ASSERT_EQUAL(lst.size, 0)
     CU_ASSERT_EQUAL(lst.value_size, 0)

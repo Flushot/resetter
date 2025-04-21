@@ -2,17 +2,17 @@
 #define __LIST_H_DEFINED__
 
 /**
- * Linked list node
+ * Doubly-linked list node
  */
-typedef struct list_node {
+typedef struct linked_list_node {
     void* value;
-    struct list_node *prev, *next;
+    struct linked_list_node *prev, *next;
 } list_node;
 
 /**
  * Doubly-linked list
  */
-typedef struct list {
+typedef struct linked_list {
     list_node *head, *tail;
     size_t size;
 } list;
@@ -23,7 +23,7 @@ typedef struct list {
  * @param lst Empty list to initialize
  * @return 0 on success, -1 on failure
  */
-int list_init(list* lst);
+int linked_list_init(list* lst);
 
 /**
  * Insert value into list at position
@@ -33,7 +33,7 @@ int list_init(list* lst);
  * @param pos Position to insert at
  * @return 0 on success, -1 on failure
  */
-int list_insert_at(list* lst, void* value, size_t pos);
+int linked_list_insert_at(list* lst, void* value, size_t pos);
 
 /**
  * Get value at position in list
@@ -42,7 +42,7 @@ int list_insert_at(list* lst, void* value, size_t pos);
  * @param pos Position to get item at
  * @return Value of item (or NULL it not found)
  */
-void* list_get_at(const list* lst, size_t pos);
+void* linked_list_get_at(const list* lst, size_t pos);
 
 /**
  * Delete value at position in list
@@ -51,7 +51,7 @@ void* list_get_at(const list* lst, size_t pos);
  * @param pos Position to delete at
  * @return 0 on success, -1 on failure
  */
-int list_del_at(list* lst, size_t pos);
+int linked_list_del_at(list* lst, size_t pos);
 
 /**
  * Get first (head) value from list
@@ -59,7 +59,7 @@ int list_del_at(list* lst, size_t pos);
  * @param lst List
  * @return Value of head (or NULL if empty)
  */
-void* list_head(const list* lst);
+void* linked_list_head(const list* lst);
 
 /**
  * Push value to head of list (prepend)
@@ -68,7 +68,7 @@ void* list_head(const list* lst);
  * @param value Value
  * @return 0 on success, -1 on failure
  */
-int list_push_head(list* lst, void* value);
+int linked_list_push_head(list* lst, void* value);
 
 /**
  * Pop value from head of list
@@ -76,7 +76,7 @@ int list_push_head(list* lst, void* value);
  * @param lst List
  * @return Value that was popped (or NULL if not found)
  */
-void* list_pop_head(list* lst);
+void* linked_list_pop_head(list* lst);
 
 /**
  * Get last value in list
@@ -84,7 +84,7 @@ void* list_pop_head(list* lst);
  * @param lst List
  * @return Value of tail (or NULL if empty)
  */
-void* list_tail(const list* lst);
+void* linked_list_tail(const list* lst);
 
 /**
  * Push value to tail of list (append)
@@ -93,7 +93,7 @@ void* list_tail(const list* lst);
  * @param value Value
  * @return 0 on success, -1 on failure
  */
-int list_push_tail(list* lst, void* value);
+int linked_list_push_tail(list* lst, void* value);
 
 /**
  * Pop last (tail) value from list
@@ -101,7 +101,7 @@ int list_push_tail(list* lst, void* value);
  * @param lst List
  * @return Value from tail (or NULL if empty)
  */
-void* list_pop_tail(list* lst);
+void* linked_list_pop_tail(list* lst);
 
 /**
  * List iterator callback function
@@ -124,7 +124,7 @@ typedef void (*list_iter_func)(
  * @param iter_func_user_arg Optional argument to pass to callback function
  * @return 0 on success, -1 on failure
  */
-int list_iter(
+int linked_list_iter(
     const list* lst,
     list_iter_func iter_func,
     void* iter_func_user_arg
@@ -136,7 +136,7 @@ int list_iter(
  *
  * @param lst List
  */
-void list_dump(const list* lst);
+void linked_list_dump(const list* lst);
 
 /**
  * Destroy list
@@ -144,6 +144,6 @@ void list_dump(const list* lst);
  * @param lst List
  * @return 0 on success, -1 on failure
  */
-int list_destroy(list* lst);
+int linked_list_destroy(list* lst);
 
 #endif

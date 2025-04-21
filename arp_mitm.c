@@ -102,7 +102,7 @@ int start_arp_mitm_thread(thread_node* thread, char* device) {
 
     // Init ARP table
     ctx->arp_table = malloc(sizeof(hash_table));
-    if (ht_init(ctx->arp_table, 100, arp_table_key_cmp, NULL) != 0) {
+    if (hash_table_init(ctx->arp_table, 100, arp_table_key_cmp, NULL) != 0) {
         return -1;
     }
 
@@ -142,15 +142,15 @@ static void unpoison_arp_table_entry(
         return;
     }
 
-    ht_del(ctx->arp_table, entry->key);
+    hash_table_del(ctx->arp_table, entry->key);
 }
 
 static void unpoison(resetter_context* ctx) {
     printf("Removing ARP poison...\n");
     ctx->arp_poisoning = 0;
 
-    if (ht_size(ctx->arp_table) > 0) {
-        ht_iter(ctx->arp_table, unpoison_arp_table_entry, ctx);
+    if (hash_table_size(ctx->arp_table) > 0) {
+        hash_table_iter(ctx->arp_table, unpoison_arp_table_entry, ctx);
     }
 }
 
@@ -375,18 +375,18 @@ static void on_arp_packet_captured(
                    inet_ntoa(saddr.sin_addr));
             printf("%s\n", net_utils_ether_ntoa(arp_payload->ar_sha));
 
-            if (ht_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
-                hash_table_entry* entry = ht_init_entry(
+            if (hash_table_get(ctx->arp_table, &saddr.sin_addr.s_addr) == NULL) {
+                hash_table_entry* entry = hash_table_init_entry(
                     &saddr.sin_addr.s_addr, sizeof(uint32_t),
                     arp_payload->ar_sha, sizeof(arp_payload->ar_sha));
                 if (entry == NULL) {
                     return;
                 }
 
-                if (ht_set_entry(ctx->arp_table, entry) != 0) {
+                if (hash_table_set_entry(ctx->arp_table, entry) != 0) {
                     fprintf(stderr, "Error updating ARP table for %s",
                             inet_ntoa(saddr.sin_addr));
-                    ht_destroy_entry(entry);
+                    hash_table_destroy_entry(entry);
                     return;
                 }
 
@@ -414,7 +414,7 @@ static void cleanup(resetter_context* ctx) {
     }
 
     if (ctx->arp_table != NULL) {
-        ht_destroy(ctx->arp_table);
+        hash_table_destroy(ctx->arp_table);
         free(ctx->arp_table);
         ctx->arp_table = NULL;
     }

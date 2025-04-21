@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "list.h"
+#include "linked_list.h"
 
 /**
  * Create a new list node
@@ -48,7 +48,7 @@ static list_node* find_node_at(list_node* list, const size_t pos) {
     return NULL;
 }
 
-int list_init(list* lst) {
+int linked_list_init(list* lst) {
     lst->head = NULL;
     lst->tail = NULL;
     lst->size = 0;
@@ -56,7 +56,7 @@ int list_init(list* lst) {
     return 0;
 }
 
-int list_insert_at(list* lst, void* value, const size_t pos) {
+int linked_list_insert_at(list* lst, void* value, const size_t pos) {
     list_node* p_head = lst->head;
     list_node* p_existing = find_node_at(p_head, pos);
 
@@ -86,7 +86,7 @@ int list_insert_at(list* lst, void* value, const size_t pos) {
     return 0;
 }
 
-void* list_get_at(const list* lst, const size_t pos) {
+void* linked_list_get_at(const list* lst, const size_t pos) {
     list_node* p_node = find_node_at(lst->head, pos);
 
     if (p_node == NULL) {
@@ -96,7 +96,7 @@ void* list_get_at(const list* lst, const size_t pos) {
     return p_node->value;
 }
 
-int list_del_at(list* lst, const size_t pos) {
+int linked_list_del_at(list* lst, const size_t pos) {
     if (lst->head == NULL) {
         fprintf(stderr, "list_del_at: list is empty");
         return -1;
@@ -134,7 +134,7 @@ int list_del_at(list* lst, const size_t pos) {
     return 0;
 }
 
-void* list_head(const list* lst) {
+void* linked_list_head(const list* lst) {
     if (lst->head == NULL) {
         return NULL;
     }
@@ -142,7 +142,7 @@ void* list_head(const list* lst) {
     return lst->head->value;
 }
 
-int list_push_head(list* lst, void* value) {
+int linked_list_push_head(list* lst, void* value) {
     list_node* p_head = lst->head;
 
     list_node* p_node = make_node(value);
@@ -168,7 +168,7 @@ int list_push_head(list* lst, void* value) {
     return 0;
 }
 
-void* list_pop_head(list* lst) {
+void* linked_list_pop_head(list* lst) {
     list_node* p_node = lst->head;
 
     if (p_node == NULL) {
@@ -185,7 +185,7 @@ void* list_pop_head(list* lst) {
     return value;
 }
 
-void* list_tail(const list* lst) {
+void* linked_list_tail(const list* lst) {
     if (lst->tail == NULL) {
         return NULL;
     }
@@ -193,7 +193,7 @@ void* list_tail(const list* lst) {
     return lst->tail->value;
 }
 
-int list_push_tail(list* lst, void* value) {
+int linked_list_push_tail(list* lst, void* value) {
     list_node* p_tail = lst->tail;
 
     list_node* p_node = make_node(value);
@@ -216,7 +216,7 @@ int list_push_tail(list* lst, void* value) {
     return 0;
 }
 
-void* list_pop_tail(list* lst) {
+void* linked_list_pop_tail(list* lst) {
     list_node* p_node = lst->tail;
 
     if (p_node == NULL) {
@@ -245,7 +245,7 @@ void* list_pop_tail(list* lst) {
     return value;
 }
 
-int list_iter(
+int linked_list_iter(
     const list* lst,
     list_iter_func iter_func,
     void* iter_func_user_arg
@@ -282,9 +282,9 @@ static void dump_iter_func(
     printf("\"%s\", ", (char *)item->value);
 }
 
-void list_dump(const list* lst) {
+void linked_list_dump(const list* lst) {
     printf("[ ");
-    list_iter(lst, dump_iter_func, NULL);
+    linked_list_iter(lst, dump_iter_func, NULL);
     printf(" ]\n");
 }
 
@@ -303,8 +303,8 @@ static void destroy_iter_func(
     free((void *)item);
 }
 
-int list_destroy(list* lst) {
-    list_iter(lst, destroy_iter_func, NULL);
+int linked_list_destroy(list* lst) {
+    linked_list_iter(lst, destroy_iter_func, NULL);
 
     lst->head = NULL;
     lst->tail = NULL;

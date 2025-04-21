@@ -1,6 +1,6 @@
 #include <CUnit/Basic.h>
 
-#include "tests/list_test.h"
+#include "tests/linked_list_test.h"
 #include "tests/murmur3_test.h"
 #include "tests/array_list_test.h"
 #include "tests/hash_table_test.h"

@@ -24,7 +24,7 @@ set(
         thread_mgr.c
         utils/array_list.c
         utils/hash_table.c
-        utils/list.c
+        utils/linked_list.c
         utils/murmur3.c
         utils/net_utils.c
 )
@@ -41,7 +41,7 @@ add_executable(
         test.c
         tests/array_list_test.c
         tests/hash_table_test.c
-        tests/list_test.c
+        tests/linked_list_test.c
         tests/murmur3_test.c
         tests/net_utils_test.c
 )
